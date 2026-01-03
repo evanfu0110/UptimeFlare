@@ -199,13 +199,6 @@ const workerConfig: WorkerConfig = {
       method: 'TCP_PING',
       target: '46.232.60.28:22',
       timeout: 5000,
-    },
-    {
-      id: 'fail_ssh998',
-      name: 'fail_ssh',
-      method: 'TCP_PING',
-      target: '192.168.124.1:22',
-      timeout: 5000,
     }
   ],
   notification: {
