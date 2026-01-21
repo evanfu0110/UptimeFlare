@@ -55,7 +55,7 @@ const workerConfig: WorkerConfig = {
     //   //checkLocationWorkerRoute: 'https://xxx.example.com',
     // },
     {
-      id: 'COLABLOG',
+      id: 'COLA-BLOG',
       name: '沸腾鱼的博客',
       method: 'HEAD',
       target: 'https://blog.ftianyu.cn/',
@@ -85,7 +85,7 @@ const workerConfig: WorkerConfig = {
       timeout: 10000,
     },
     {
-      id: 'colacover',
+      id: 'cola-cover',
       name: 'Cola Cover',
       method: 'HEAD',
       target: 'https://cover.ftianyu.cn/',
@@ -95,7 +95,7 @@ const workerConfig: WorkerConfig = {
       timeout: 10000,
     },
     {
-      id: 'colasearch',
+      id: 'cola-search',
       name: 'Cola Search',
       method: 'HEAD',
       target: 'https://cola.evanfu.xyz/',
