@@ -32,6 +32,7 @@ export type PageConfigLink = {
 export type MonitorTarget = {
   id: string
   name: string
+  icon?: string
   method: string
   target: string
   tooltip?: string

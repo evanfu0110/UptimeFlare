@@ -6,6 +6,7 @@ import DetailBar from './DetailBar'
 import { getColor } from '@/util/color'
 import { maintenances } from '@/uptime.config'
 import { useTranslation } from 'react-i18next'
+import { Icon } from '@iconify/react'
 
 export default function MonitorDetail({
   monitor,
@@ -16,10 +17,43 @@ export default function MonitorDetail({
 }) {
   const { t } = useTranslation('common')
 
+  const isUrlIcon = monitor.icon?.startsWith('http') || monitor.icon?.startsWith('/')
+  const renderIcon = (marginRight = '4px') => {
+    if (!monitor.icon) return null
+    if (isUrlIcon) {
+      return (
+        <img
+          src={monitor.icon}
+          style={{
+            width: '1.2em',
+            height: '1.2em',
+            marginRight: marginRight,
+            flexShrink: 0,
+            objectFit: 'contain',
+            verticalAlign: 'middle',
+          }}
+          alt=""
+        />
+      )
+    }
+    return (
+      <Icon
+        icon={monitor.icon}
+        style={{
+          marginRight: marginRight,
+          fontSize: '1.2em',
+          flexShrink: 0,
+          verticalAlign: 'middle',
+        }}
+      />
+    )
+  }
+
   if (!state.latency[monitor.id])
     return (
       <>
-        <Text mt="sm" fw={700}>
+        <Text mt="sm" fw={700} style={{ display: 'flex', alignItems: 'center' }}>
+          {renderIcon('8px')}
           {monitor.name}
         </Text>
         <Text mt="sm" fw={700}>
@@ -31,11 +65,11 @@ export default function MonitorDetail({
   let statusIcon =
     state.incident[monitor.id].slice(-1)[0].end === undefined ? (
       <IconAlertCircle
-        style={{ width: '1.25em', height: '1.25em', color: '#b91c1c', marginRight: '3px' }}
+        style={{ width: '1.25em', height: '1.25em', color: '#b91c1c', marginRight: '4px' }}
       />
     ) : (
       <IconCircleCheck
-        style={{ width: '1.25em', height: '1.25em', color: '#059669', marginRight: '3px' }}
+        style={{ width: '1.25em', height: '1.25em', color: '#059669', marginRight: '4px' }}
       />
     )
 
@@ -51,7 +85,7 @@ export default function MonitorDetail({
           width: '1.25em',
           height: '1.25em',
           color: '#fab005',
-          marginRight: '3px',
+          marginRight: '4px',
         }}
       />
     )
@@ -73,11 +107,15 @@ export default function MonitorDetail({
           target="_blank"
           style={{ display: 'inline-flex', alignItems: 'center', color: 'inherit' }}
         >
-          {statusIcon} {monitor.name}
+          {statusIcon}
+          {renderIcon()}
+          {monitor.name}
         </a>
       ) : (
         <>
-          {statusIcon} {monitor.name}
+          {statusIcon}
+          {renderIcon()}
+          {monitor.name}
         </>
       )}
     </Text>

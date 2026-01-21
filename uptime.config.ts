@@ -57,6 +57,7 @@ const workerConfig: WorkerConfig = {
     {
       id: 'COLA-BLOG',
       name: '沸腾鱼的博客',
+      icon: 'https://blog.ftianyu.cn/favicon/logo.svg',
       method: 'HEAD',
       target: 'https://blog.ftianyu.cn/',
       statusPageLink: 'https://blog.ftianyu.cn/',
@@ -67,6 +68,7 @@ const workerConfig: WorkerConfig = {
     {
       id: 'cshvh',
       name: 'HVH名人堂',
+      icon: 'https://cs.hvh.one/favicon.ico',
       method: 'HEAD',
       target: 'https://cs.hvh.one',
       statusPageLink: 'https://cs.hvh.one',
@@ -76,7 +78,8 @@ const workerConfig: WorkerConfig = {
     },
     {
       id: 'HVH.ONE',
-      name: 'HVH.ONE 官方网站',
+      name: 'HVH.ONE官网',
+      icon: 'https://www.hvh.one/favicon.ico',
       method: 'HEAD',
       target: 'https://www.hvh.one',
       statusPageLink: 'https://www.hvh.one',
@@ -87,6 +90,7 @@ const workerConfig: WorkerConfig = {
     {
       id: 'cola-cover',
       name: 'Cola Cover',
+      icon: 'https://blog.ftianyu.cn/favicon/logo.svg',
       method: 'HEAD',
       target: 'https://cover.ftianyu.cn/',
       statusPageLink: 'https://cover.ftianyu.cn/',
@@ -97,6 +101,7 @@ const workerConfig: WorkerConfig = {
     {
       id: 'cola-search',
       name: 'Cola Search',
+      icon: 'https://cola.evanfu.xyz/icon.svg',
       method: 'HEAD',
       target: 'https://cola.evanfu.xyz/',
       statusPageLink: 'https://cola.evanfu.xyz/',
@@ -106,11 +111,20 @@ const workerConfig: WorkerConfig = {
     },
     {
       id: 'aliyun_ssh',
-      name: '阿里云 SSH',
+      name: '阿里服 SSH',
+      icon: 'https://cdn.simpleicons.org/alibabacloud/orange',
       method: 'TCP_PING',
       target: '121.43.155.97:22',
       timeout: 5000,
-    }
+    },
+    {
+      id: 'qxy_ssh',
+      name: '香港服 SSH',
+      icon: 'https://cloud.qxyidc.com//themes/web/www/upload/local680f549fb4331.png',
+      method: 'TCP_PING',
+      target: '45.207.192.99:22',
+      timeout: 5000,
+    },
   ],
   notification: {
     // [Optional] Notification webhook settings, if not specified, no notification will be sent
