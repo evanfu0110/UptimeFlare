@@ -13,7 +13,7 @@ const pageConfig: PageConfig = {
     { link: 'https://cs.hvh.one', label: 'HVH名人堂' },
     { link: 'https://blog.ftianyu.cn', label: '博客' },
   ],
-  customFooter: '<p style="text-align: center; font-size: 12px; margin-top: 10px;">Cola Services Status Powered by Uptimeflare</p>',
+  customFooter: '<p style="text-align: center; font-size: 12px; margin-top: 10px;">Cola Services Status Powered by Uptimeflare<br><a href="https://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">鄂ICP备2026001768号-1</a></p>',
 }
 
 const workerConfig: WorkerConfig = {

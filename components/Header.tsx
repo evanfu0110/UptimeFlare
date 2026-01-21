@@ -27,8 +27,7 @@ export default function Header({ style }: { style?: React.CSSProperties }) {
       <Container size="md" className={classes.inner}>
         <div>
           <a
-            href={location.pathname == '/' ? 'https://github.com/lyc8503/UptimeFlare' : '/'}
-            target={location.pathname == '/' ? '_blank' : undefined}
+            href="/"
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
             <Group gap="xs">
