@@ -3,15 +3,28 @@ import classes from '@/styles/Header.module.css'
 import { pageConfig } from '@/uptime.config'
 import { PageConfigLink } from '@/types/config'
 import { useTranslation } from 'react-i18next'
+import Link from 'next/link'
 
 export default function Header({ style }: { style?: React.CSSProperties }) {
   const { t } = useTranslation('common')
   const linkToElement = (link: PageConfigLink, i: number) => {
+    if (link.link.startsWith('/')) {
+      return (
+        <Link
+          key={i}
+          href={link.link}
+          className={classes.link}
+          data-active={link.highlight}
+        >
+          {link.label}
+        </Link>
+      )
+    }
     return (
       <a
         key={i}
         href={link.link}
-        target={link.link.startsWith('/') ? undefined : '_blank'}
+        target="_blank"
         className={classes.link}
         data-active={link.highlight}
       >
@@ -26,7 +39,7 @@ export default function Header({ style }: { style?: React.CSSProperties }) {
     <header className={classes.header} style={style}>
       <Container size="md" className={classes.inner}>
         <div>
-          <a
+          <Link
             href="/"
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
@@ -40,7 +53,7 @@ export default function Header({ style }: { style?: React.CSSProperties }) {
               />
               <span style={{ fontSize: '20px', fontWeight: 600 }}>Cola Services Status</span>
             </Group>
-          </a>
+          </Link>
         </div>
 
         <Group gap={5} visibleFrom="sm">
