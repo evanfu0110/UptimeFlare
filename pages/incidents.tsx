@@ -83,7 +83,7 @@ export default function IncidentsPage() {
     <>
       <Head>
         <title>{pageConfig.title}</title>
-        <link rel="icon" href={pageConfig.favicon ?? '/favicon.png'} />
+        <link rel="icon" href={pageConfig.favicon ?? '/favicon.ico'} />
       </Head>
 
       <main className={inter.className}>

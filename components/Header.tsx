@@ -29,14 +29,18 @@ export default function Header({ style }: { style?: React.CSSProperties }) {
           <a
             href={location.pathname == '/' ? 'https://github.com/lyc8503/UptimeFlare' : '/'}
             target={location.pathname == '/' ? '_blank' : undefined}
+            style={{ textDecoration: 'none', color: 'inherit' }}
           >
-            <Image
-              src={pageConfig.logo ?? '/logo.svg'}
-              h={56}
-              w={{ base: 140, sm: 190 }}
-              fit="contain"
-              alt="logo"
-            />
+            <Group gap="xs">
+              <Image
+                src={pageConfig.logo ?? '/logo.svg'}
+                h={32}
+                w={32}
+                fit="contain"
+                alt="logo"
+              />
+              <span style={{ fontSize: '20px', fontWeight: 600 }}>Cola Services Status</span>
+            </Group>
           </a>
         </div>
 
