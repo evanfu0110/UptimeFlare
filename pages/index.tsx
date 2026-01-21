@@ -83,6 +83,7 @@ export async function getServerSideProps() {
       statusPageLink: monitor?.statusPageLink,
       // @ts-ignore
       hideLatencyChart: monitor?.hideLatencyChart,
+      icon: monitor.icon,
     }
   })
 
