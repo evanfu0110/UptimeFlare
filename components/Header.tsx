@@ -51,7 +51,7 @@ export default function Header({ style }: { style?: React.CSSProperties }) {
                 fit="contain"
                 alt="logo"
               />
-              <span style={{ fontSize: '20px', fontWeight: 600 }}>Cola Services Status</span>
+              <span style={{ fontSize: '20px', fontWeight: 600 }}>Cola Monitor</span>
             </Group>
           </Link>
         </div>
