@@ -118,11 +118,11 @@ const workerConfig: WorkerConfig = {
       timeout: 5000,
     },
     {
-      id: 'hvhone_ssh',
-      name: 'HVH.ONE杭州节点 SSH',
+      id: 'hvhone_rdp',
+      name: 'HVH.ONE杭州节点 RDP',
       icon: 'https://www.hvh.one/favicon.ico',
       method: 'TCP_PING',
-      target: '183.129.171.170:22',
+      target: '183.129.171.170:3389',
       timeout: 5000,
     },
     {
