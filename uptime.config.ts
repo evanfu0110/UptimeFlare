@@ -118,6 +118,14 @@ const workerConfig: WorkerConfig = {
       timeout: 5000,
     },
     {
+      id: 'hvhone_ssh',
+      name: 'HVH.ONE杭州节点 SSH',
+      icon: 'https://www.hvh.one/favicon.ico',
+      method: 'TCP_PING',
+      target: '183.129.171.170:22',
+      timeout: 5000,
+    },
+    {
       id: 'qxy_ssh',
       name: '香港服 SSH',
       icon: 'https://cloud.qxyidc.com//themes/web/www/upload/local680f549fb4331.png',
