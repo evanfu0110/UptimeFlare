@@ -57,15 +57,17 @@ export default function Header({ style }: { style?: React.CSSProperties }) {
           </Link>
         </div>
 
-        <Group gap={5} visibleFrom="sm">
-          {links?.map(linkToElement)}
-        </Group>
+        <Group>
+          <Group gap={5} visibleFrom="sm">
+            {links?.map(linkToElement)}
+          </Group>
 
-        <Group gap={5} hiddenFrom="sm">
-          {links?.filter((link) => link.highlight || link.link.startsWith('/')).map(linkToElement)}
-        </Group>
+          <Group gap={5} hiddenFrom="sm">
+            {links?.filter((link) => link.highlight || link.link.startsWith('/')).map(linkToElement)}
+          </Group>
 
-        <ThemeToggle />
+          <ThemeToggle />
+        </Group>
       </Container>
     </header>
   )
