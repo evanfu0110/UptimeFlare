@@ -4,9 +4,10 @@ import { pageConfig } from '@/uptime.config'
 import { PageConfigLink } from '@/types/config'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
+import { CSSProperties } from 'react'
 import { ThemeToggle } from './ThemeToggle'
 
-export default function Header({ style }: { style?: React.CSSProperties }) {
+export default function Header({ style }: { style?: CSSProperties }) {
   const { t } = useTranslation('common')
   const linkToElement = (link: PageConfigLink, i: number) => {
     if (link.link.startsWith('/')) {
