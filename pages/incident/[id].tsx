@@ -37,7 +37,9 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
     let dayIncidents: any[] = []
 
     if (id && typeof id === 'string') {
-        const [monId, startTs] = id.split('-')
+        const lastDashIndex = id.lastIndexOf('-')
+        const monId = id.substring(0, lastDashIndex)
+        const startTs = id.substring(lastDashIndex + 1)
         activeMonitor = monitors.find(m => m.id === monId)
 
         if (state.incident[monId]) {
