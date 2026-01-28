@@ -33,14 +33,18 @@ interface GroupedIncident {
 
 function translateError(msg: string): string {
   if (!msg) return ''
-  if (msg.includes('timed out')) return '请求超时 (Timed out)'
-  if (msg.includes('fetch failed')) return '抓取失败 (Fetch failed)'
-  if (msg.includes('connection reset')) return '连接重置 (Connection reset)'
-  if (msg.includes('ECONNREFUSED')) return '拒绝连接 (Connection refused)'
-  if (msg.includes('404')) return '页面未找到 (404 Not Found)'
-  if (msg.includes('500')) return '服务器内部错误 (500 Internal Error)'
-  if (msg.includes('502')) return '网关错误 (502 Bad Gateway)'
-  if (msg.includes('503')) return '服务不可用 (503 Service Unavailable)'
+  if (msg.includes('timed out')) {
+    const match = msg.match(/(\d+)ms/)
+    if (match) return `超时 (${match[1]}ms)`
+    return '请求超时'
+  }
+  if (msg.includes('fetch failed')) return '抓取失败'
+  if (msg.includes('connection reset')) return '连接重置'
+  if (msg.includes('ECONNREFUSED')) return '拒绝连接'
+  if (msg.includes('404')) return '页面未找到 (404)'
+  if (msg.includes('500')) return '服务器内部错误 (500)'
+  if (msg.includes('502')) return '网关错误 (502)'
+  if (msg.includes('503')) return '服务不可用 (503)'
   return msg
 }
 
@@ -55,6 +59,11 @@ export default function IncidentsPage({ compactedStateStr, monitors }: { compact
     const monitorIncidents = state.incident[monitor.id] || []
     monitorIncidents.forEach(incident => {
       const incidentId = `${monitor.id}-${incident.start[0]}`
+
+      // Filter out short incidents < 10 seconds
+      const duration = (incident.end || Date.now() / 1000) - incident.start[0]
+      if (duration < 10) return
+
       incident.error.forEach((errorMsg, idx) => {
         const startTime = incident.start[idx]
         allEvents.push({
@@ -183,7 +192,7 @@ export default function IncidentsPage({ compactedStateStr, monitors }: { compact
 
           <Stack gap={64}>
             {monthSections.length === 0 ? (
-              <Box bg="rgb(18, 20, 26)" p={40} style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
+              <Box bg="rgb(18, 20, 26)" p={40} style={{ borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
                 <Group justify="center" gap="xs" style={{ color: 'rgb(138, 145, 165)' }}>
                   <IconCircleCheck size={18} />
                   <Text size="15px" fw={500}>没有报告事件</Text>
@@ -210,12 +219,12 @@ export default function IncidentsPage({ compactedStateStr, monitors }: { compact
                               <Box style={{ position: 'relative' }}>
                                 {count > 1 && (
                                   <>
-                                    <div style={{ position: 'absolute', bottom: '-4px', left: '6px', right: '6px', height: '10px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 8px 8px', zIndex: 0 }} />
-                                    <div style={{ position: 'absolute', bottom: '-8px', left: '12px', right: '12px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 8px 8px', zIndex: -1 }} />
+                                    <div style={{ position: 'absolute', bottom: '-4px', left: '6px', right: '6px', height: '10px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 16px 16px', zIndex: 0 }} />
+                                    <div style={{ position: 'absolute', bottom: '-8px', left: '12px', right: '12px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 16px 16px', zIndex: -1 }} />
                                   </>
                                 )}
 
-                                <Box p="md" bg="rgb(22, 24, 30)" style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 1 }}>
+                                <Box p="md" bg="rgb(22, 24, 30)" style={{ borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 1 }}>
                                   <Group justify="space-between" mb={14}>
                                     <Group gap="xs">
                                       {monitors.find(m => m.id === incident.monitorId)?.icon && (

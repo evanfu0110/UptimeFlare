@@ -50,6 +50,11 @@ export default function PastIncidents({
         const monitorIncidents = state.incident[monitor.id] || []
         monitorIncidents.forEach(incident => {
             const incidentId = `${monitor.id}-${incident.start[0]}`
+
+            // Filter out short incidents < 10 seconds
+            const duration = (incident.end || Date.now() / 1000) - incident.start[0]
+            if (duration < 10) return
+
             incident.error.forEach((errorMsg, idx) => {
                 const startTime = incident.start[idx]
                 allEvents.push({

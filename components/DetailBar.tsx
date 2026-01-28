@@ -5,6 +5,7 @@ import classes from '@/styles/DetailBar.module.css'
 import { useResizeObserver } from '@mantine/hooks'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useRouter } from 'next/router'
 const moment = require('moment')
 require('moment-precise-range-plugin')
 
@@ -16,6 +17,7 @@ export default function DetailBar({
   state: MonitorState
 }) {
   const { t } = useTranslation('common')
+  const router = useRouter()
   const [barRef, barRect] = useResizeObserver()
   const [modalOpened, setModalOpened] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
@@ -45,6 +47,10 @@ export default function DetailBar({
     for (let incident of state.incident[monitor.id]) {
       const incidentStart = incident.start[0]
       const incidentEnd = incident.end ?? currentTime
+
+      // Filter out short incidents < 10 seconds (network glitch)
+      const duration = incidentEnd - incidentStart
+      if (duration < 10) continue
 
       const overlap = overlapLen(dayStart, dayEnd, incidentStart, incidentEnd)
       dayDownTime += overlap
@@ -83,6 +89,8 @@ export default function DetailBar({
         dayDownTime={dayDownTime}
         i={i}
         t={t}
+        monitorId={monitor.id}
+        router={router}
       />
     )
   }
@@ -127,12 +135,16 @@ function UptimeBar({
   dayDownTime,
   i,
   t,
+  monitorId,
+  router
 }: {
   dayStart: number
   dayPercent: string
   dayDownTime: number
   i: number
   t: any
+  monitorId: string
+  router: any
 }) {
   const isNoData = Number.isNaN(Number(dayPercent)) || (Number(dayPercent) === 0 && dayDownTime === 0);
 
@@ -185,6 +197,13 @@ function UptimeBar({
           cursor: isNoData ? 'default' : (dayDownTime > 0 ? 'pointer' : 'default'),
         }}
         className={classes.bar}
+        onClick={() => {
+          if (!isNoData && dayDownTime > 0) {
+            // Jump to incident detail with correct day context
+            // We use the dayStart as the timestamp anchor
+            router.push(`/incident/${monitorId}-${dayStart}`)
+          }
+        }}
       />
     </Tooltip>
   )

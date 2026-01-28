@@ -1,6 +1,6 @@
 import { Box, Group, Text, Badge, ThemeIcon, Tooltip } from '@mantine/core'
 import { MonitorState, MonitorTarget } from '@/types/config'
-import { IconAlertCircle, IconAlertTriangle, IconCircleCheck, IconChevronRight } from '@tabler/icons-react'
+import { IconAlertCircle, IconAlertTriangle, IconCircleCheck, IconChevronRight, IconExternalLink } from '@tabler/icons-react'
 import DetailChart from './DetailChart'
 import DetailBar from './DetailBar'
 import { getColor } from '@/util/color'
@@ -103,7 +103,7 @@ export default function MonitorDetail({
           <Text size="15px" fw={500} c="#ffffff" style={{ lineHeight: '22.5px' }}>
             {monitor.name}
           </Text>
-          <IconChevronRight size={16} color="rgb(138, 145, 165)" />
+          <IconExternalLink size={16} color="rgb(138, 145, 165)" />
         </a>
 
         <Group gap="sm" align="center" onClick={() => setExpanded(!expanded)} style={{ cursor: 'pointer' }}>

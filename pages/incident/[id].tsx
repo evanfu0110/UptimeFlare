@@ -13,14 +13,18 @@ export const runtime = 'experimental-edge'
 
 function translateError(msg: string): string {
     if (!msg) return ''
-    if (msg.includes('timed out') || msg.includes('timeout')) return '请求超时 (Timed out)'
-    if (msg.includes('fetch failed')) return '抓取失败 (Fetch failed)'
-    if (msg.includes('connection reset')) return '连接重置 (Connection reset)'
-    if (msg.includes('ECONNREFUSED')) return '拒绝连接 (Connection refused)'
-    if (msg.includes('404')) return '页面未找到 (404 Not Found)'
-    if (msg.includes('500')) return '服务器内部错误 (500 Internal Error)'
-    if (msg.includes('502')) return '网关错误 (502 Bad Gateway)'
-    if (msg.includes('503')) return '服务不可用 (503 Service Unavailable)'
+    if (msg.includes('timed out') || msg.includes('timeout')) {
+        const match = msg.match(/(\d+)ms/)
+        if (match) return `超时 (${match[1]}ms)`
+        return '请求超时'
+    }
+    if (msg.includes('fetch failed')) return '抓取失败'
+    if (msg.includes('connection reset')) return '连接重置'
+    if (msg.includes('ECONNREFUSED')) return '拒绝连接'
+    if (msg.includes('404')) return '页面未找到 (404)'
+    if (msg.includes('500')) return '服务器内部错误 (500)'
+    if (msg.includes('502')) return '网关错误 (502)'
+    if (msg.includes('503')) return '服务不可用 (503)'
     return msg
 }
 
@@ -46,9 +50,9 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
                 const incDate = new Date(inc.start[0] * 1000)
                 const incDateStr = `${incDate.getFullYear()}-${incDate.getMonth()}-${incDate.getDate()}`
 
-                // Filter out short incidents < 1 minute
+                // Filter out short incidents < 10 minute
                 const duration = (inc.end || Date.now() / 1000) - inc.start[0]
-                if (duration < 60) return false;
+                if (duration < 10) return false;
 
                 return incDateStr === targetDateStr
             })
@@ -145,7 +149,7 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
                         </Group>
 
                         {/* Affected Services Bar */}
-                        <Box bg="rgb(18, 20, 26)" p="sm" style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <Box bg="rgb(18, 20, 26)" p="sm" style={{ borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                             <Group gap="xs">
                                 <Text size="13px" fw={500} c="rgb(138, 145, 165)">受影响的服务:</Text>
                                 <Badge variant="filled" bg="rgba(255, 255, 255, 0.05)" c="#ffffff" radius="md" size="sm" style={{ textTransform: 'none' }}>{activeMonitor.name}</Badge>
@@ -236,7 +240,7 @@ function TimelineItem({ status, time, message, color, icon }: any) {
                     bg="rgba(255, 255, 255, 0.03)"
                     style={{
                         border: '1px solid rgba(255, 255, 255, 0.05)',
-                        borderRadius: '8px',
+                        borderRadius: '16px',
                         color: 'rgb(180, 184, 195)'
                     }}
                 >
