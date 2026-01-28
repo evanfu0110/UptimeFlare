@@ -5,7 +5,6 @@ import classes from '@/styles/DetailBar.module.css'
 import { useResizeObserver } from '@mantine/hooks'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useRouter } from 'next/router'
 const moment = require('moment')
 require('moment-precise-range-plugin')
 
@@ -17,7 +16,6 @@ export default function DetailBar({
   state: MonitorState
 }) {
   const { t } = useTranslation('common')
-  const router = useRouter()
   const [barRef, barRect] = useResizeObserver()
   const [modalOpened, setModalOpened] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
@@ -90,7 +88,6 @@ export default function DetailBar({
         i={i}
         t={t}
         monitorId={monitor.id}
-        router={router}
       />
     )
   }
@@ -136,7 +133,6 @@ function UptimeBar({
   i,
   t,
   monitorId,
-  router
 }: {
   dayStart: number
   dayPercent: string
@@ -144,7 +140,6 @@ function UptimeBar({
   i: number
   t: any
   monitorId: string
-  router: any
 }) {
   const isNoData = Number.isNaN(Number(dayPercent)) || (Number(dayPercent) === 0 && dayDownTime === 0);
 
@@ -201,7 +196,7 @@ function UptimeBar({
           if (!isNoData && dayDownTime > 0) {
             // Jump to incident detail with correct day context
             // We use the dayStart as the timestamp anchor
-            router.push(`/incident/${monitorId}-${dayStart}`)
+            window.location.href = `/incident/${monitorId}-${dayStart}`
           }
         }}
       />
