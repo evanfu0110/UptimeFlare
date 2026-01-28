@@ -9,7 +9,7 @@ import { CompactedMonitorStateWrapper, getFromStore } from '@/worker/src/store'
 import { MonitorTarget } from '@/types/config'
 import Link from 'next/link'
 
-export const runtime = 'experimental-edge'
+export const runtime = 'edge'
 
 function translateError(msg: string): string {
     if (!msg) return ''

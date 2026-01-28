@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { CompactedMonitorStateWrapper, getFromStore } from '@/worker/src/store'
 import PastIncidents from '@/components/PastIncidents'
 
-export const runtime = 'experimental-edge'
+export const runtime = 'edge'
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home({
