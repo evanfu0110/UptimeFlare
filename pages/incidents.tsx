@@ -1,5 +1,5 @@
 import Head from 'next/head'
-export const runtime = 'edge'
+export const runtime = 'experimental-edge'
 import { Inter } from 'next/font/google'
 import { MonitorState, MonitorTarget } from '@/types/config'
 import { pageConfig, workerConfig } from '@/uptime.config'
