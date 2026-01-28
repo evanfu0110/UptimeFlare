@@ -11,7 +11,7 @@ export default function Footer() {
         <Divider mb="xl" color="rgba(255, 255, 255, 0.05)" />
         <Stack align="center" gap="xs">
           <Text size="13px" fw={500} c="rgb(138, 145, 165)">
-            © {new Date().getFullYear()} **Cola**. 版权所有。
+            © {new Date().getFullYear()} Cola. 版权所有。
           </Text>
           <div
             style={{

@@ -62,10 +62,10 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
                 <title>{activeMonitor.name} - 事件详情 | Cola Monitor</title>
             </Head>
 
-            <main style={{ backgroundColor: '#0d0f12', minHeight: '100vh', paddingBottom: '20px' }}>
+            <main style={{ backgroundColor: '#0d0f12', minHeight: '100vh', paddingBottom: '40px' }}>
                 <Header />
 
-                <Container size="md" mt={40} mb={64}>
+                <Container size="md" mt={48} mb={64}>
                     {/* Back Button */}
                     <Link href="/incidents" style={{ textDecoration: 'none' }}>
                         <Group gap={4} mb={32} style={{ cursor: 'pointer', color: 'rgb(138, 145, 165)' }}>
@@ -75,7 +75,7 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
                     </Link>
 
                     {/* Incident Header */}
-                    <Box mb={32}>
+                    <Box mb={40}>
                         <Title order={1} size="32px" c="#ffffff" fw={700} mb={16} style={{ letterSpacing: '-0.4px' }}>
                             {activeMonitor.name} detection failure
                         </Title>

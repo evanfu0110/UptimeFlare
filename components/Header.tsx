@@ -42,7 +42,6 @@ export default function Header({ style }: { style?: CSSProperties }) {
   const links = [
     { label: '状态', link: '/' },
     { label: '事件', link: '/incidents' },
-    { label: '国内监测节点', link: 'https://vps.2x.nz/nodes' }, // Replicating reference link
   ]
 
   return (
@@ -74,10 +73,8 @@ export default function Header({ style }: { style?: CSSProperties }) {
           </Group>
 
           <Group gap={5} hiddenFrom="sm">
-            {links.filter((link) => link.link.startsWith('/')).map(linkToElement)}
+            {links.map(linkToElement)}
           </Group>
-
-          <ThemeToggle />
         </Group>
       </Container>
     </header>
