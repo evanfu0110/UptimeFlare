@@ -13,14 +13,14 @@ export const runtime = 'experimental-edge'
 
 function translateError(msg: string): string {
     if (!msg) return ''
-    if (msg.includes('timed out')) return '系统在尝试连接服务时请求超时。这通常意味着网络路径拥堵或目标服务器响应过慢。'
-    if (msg.includes('fetch failed')) return '无法获取目标资源。这可能是由于 DNS 解析失败或网络适配器错误引起的。'
-    if (msg.includes('connection reset')) return '连接被对端重置。服务器可能已由于过载或其他故障主动切断了连接。'
-    if (msg.includes('ECONNREFUSED')) return '服务器拒绝了连接请求。这通常意味着服务未在目标端口上运行。'
-    if (msg.includes('404')) return '页面未找到 (404)。目标路径已不存在或发生了错误的重定向。'
-    if (msg.includes('500')) return '服务器内部错误 (500)。目标后端服务发生了崩溃或配置错误。'
-    if (msg.includes('502')) return '网关错误 (502)。前端负载均衡器无法连接到后端应用实例。'
-    if (msg.includes('503')) return '服务不可用 (503)。服务器当前由于维护或过载无法处理该请求。'
+    if (msg.includes('timed out') || msg.includes('timeout')) return '请求超时 (Timed out)'
+    if (msg.includes('fetch failed')) return '抓取失败 (Fetch failed)'
+    if (msg.includes('connection reset')) return '连接重置 (Connection reset)'
+    if (msg.includes('ECONNREFUSED')) return '拒绝连接 (Connection refused)'
+    if (msg.includes('404')) return '页面未找到 (404 Not Found)'
+    if (msg.includes('500')) return '服务器内部错误 (500 Internal Error)'
+    if (msg.includes('502')) return '网关错误 (502 Bad Gateway)'
+    if (msg.includes('503')) return '服务不可用 (503 Service Unavailable)'
     return msg
 }
 
@@ -29,32 +29,64 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
     const { id } = router.query
     const state = new CompactedMonitorStateWrapper(compactedStateStr).uncompact()
 
-    let activeIncident: any = null
     let activeMonitor: any = null
+    let dayIncidents: any[] = []
 
     if (id && typeof id === 'string') {
         const [monId, startTs] = id.split('-')
         activeMonitor = monitors.find(m => m.id === monId)
+
         if (state.incident[monId]) {
-            activeIncident = state.incident[monId].find(inc => String(inc.start[0]) === startTs)
+            // Find all incidents for this monitor on the SAME DAY as the clicked incident
+            const targetTime = parseInt(startTs)
+            const targetDate = new Date(targetTime * 1000)
+            const targetDateStr = `${targetDate.getFullYear()}-${targetDate.getMonth()}-${targetDate.getDate()}`
+
+            dayIncidents = state.incident[monId].filter(inc => {
+                const incDate = new Date(inc.start[0] * 1000)
+                const incDateStr = `${incDate.getFullYear()}-${incDate.getMonth()}-${incDate.getDate()}`
+
+                // Filter out short incidents < 1 minute
+                const duration = (inc.end || Date.now() / 1000) - inc.start[0]
+                if (duration < 60) return false;
+
+                return incDateStr === targetDateStr
+            })
+
+            // Sort by time descending (latest first)
+            dayIncidents.sort((a, b) => b.start[0] - a.start[0])
         }
     }
 
-    if (!activeIncident || !activeMonitor) {
+    if (dayIncidents.length === 0 || !activeMonitor) {
         return (
             <>
                 <Header />
                 <Container size="md" mt={100} mb={100}>
-                    <Center><Text fw={700}>未找到该事件详情</Text></Center>
+                    <Center><Text fw={700}>未找到该事件详情或事件持续时间过短</Text></Center>
                 </Container>
                 <Footer />
             </>
         )
     }
 
-    const isResolved = activeIncident.end !== undefined
+    // Determine overall status based on the latest incident
+    const latestIncident = dayIncidents[0]
+    const isResolved = latestIncident.end !== undefined
     const statusColor = isResolved ? '#10b981' : '#ef4444'
     const statusLabel = isResolved ? '已解决' : '停机'
+
+    // Calculate duration for the latest incident (or total duration today? Usually user focuses on the "current" or "latest" event context)
+    // The user asked "Greater than 60 minutes show hours".
+    const durationSeconds = (latestIncident.end || Date.now() / 1000) - latestIncident.start[0]
+    let durationText = ''
+    if (durationSeconds < 3600) {
+        durationText = `${Math.floor(durationSeconds / 60)} 分钟`
+    } else {
+        const hours = Math.floor(durationSeconds / 3600)
+        const minutes = Math.floor((durationSeconds % 3600) / 60)
+        durationText = `${hours} 小时 ${minutes} 分钟`
+    }
 
     return (
         <>
@@ -104,11 +136,12 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
                             >
                                 {statusLabel}
                             </Badge>
-                            {isResolved && (
-                                <Text size="13px" c="rgb(138, 145, 165)" fw={500}>
-                                    持续时间: {Math.floor((activeIncident.end - activeIncident.start[0]) / 60)} 分钟
-                                </Text>
-                            )}
+                            <Text size="13px" c="rgb(138, 145, 165)" fw={500}>
+                                持续时间: {durationText}
+                            </Text>
+                            <Text size="13px" c="rgb(138, 145, 165)" fw={500}>
+                                &bull; 当日共发生 {dayIncidents.length} 次故障
+                            </Text>
                         </Group>
 
                         {/* Affected Services Bar */}
@@ -121,51 +154,53 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
                     </Box>
 
                     {/* Timeline Section */}
-                    <Box style={{ position: 'relative' }}>
-                        {/* Vertical Line */}
-                        <Box
-                            style={{
-                                position: 'absolute',
-                                left: '16.5px',
-                                top: '24px',
-                                bottom: '24px',
-                                width: '1px',
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                zIndex: 0
-                            }}
-                        />
-
-                        <Stack gap={40}>
-                            {isResolved && (
-                                <TimelineItem
-                                    status="已解决"
-                                    time={activeIncident.end}
-                                    message="服务已恢复正常运行。"
-                                    color="#10b981"
-                                    icon={<IconCircleCheck size={18} />}
-                                />
-                            )}
-
-                            {activeIncident.error.map((err: string, idx: number) => (
-                                <TimelineItem
-                                    key={idx}
-                                    status={idx === 0 ? "检测到故障" : "故障状态更新"}
-                                    time={activeIncident.start[idx]}
-                                    message={translateError(err)}
-                                    color="#ef4444"
-                                    icon={<IconAlertCircle size={18} />}
-                                />
-                            ))}
-
-                            <TimelineItem
-                                status="事件已开始"
-                                time={activeIncident.start[0]}
-                                message="系统监测到服务连接异常，故障事件已自动建立。"
-                                color="#8a91a5"
-                                icon={<IconInfoCircle size={18} />}
+                    {dayIncidents.map((incident, i) => (
+                        <Box key={i} style={{ position: 'relative' }} mb={40}>
+                            {/* Vertical Line */}
+                            <Box
+                                style={{
+                                    position: 'absolute',
+                                    left: '16.5px',
+                                    top: '24px',
+                                    bottom: '24px',
+                                    width: '1px',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                    zIndex: 0
+                                }}
                             />
-                        </Stack>
-                    </Box>
+
+                            <Stack gap={40}>
+                                {incident.end !== undefined && (
+                                    <TimelineItem
+                                        status="已解决"
+                                        time={incident.end}
+                                        message="服务已恢复正常运行。"
+                                        color="#10b981"
+                                        icon={<IconCircleCheck size={18} />}
+                                    />
+                                )}
+
+                                {incident.error.map((err: string, idx: number) => (
+                                    <TimelineItem
+                                        key={idx}
+                                        status={idx === 0 ? "检测到故障" : "故障状态更新"}
+                                        time={incident.start[idx]}
+                                        message={translateError(err)}
+                                        color="#ef4444"
+                                        icon={<IconAlertCircle size={18} />}
+                                    />
+                                ))}
+
+                                <TimelineItem
+                                    status="事件已开始"
+                                    time={incident.start[0]}
+                                    message="系统监测到服务连接异常，故障事件已自动建立。"
+                                    color="#8a91a5"
+                                    icon={<IconInfoCircle size={18} />}
+                                />
+                            </Stack>
+                        </Box>
+                    ))}
                 </Container>
 
                 <Footer />

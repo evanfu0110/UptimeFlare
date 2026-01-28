@@ -13,17 +13,16 @@ interface IncidentEvent {
     monitorId: string
 }
 
-interface GroupedIncident {
-    time: number
-    type: 'down' | 'up'
-    monitors: { id: string; name: string; type: 'down' | 'up'; message: string; incidentId: string }[]
-    // For stacking effect, we use the max updates among aggregated monitors
-    maxUpdates: number
+interface DailyIncident {
+    monitorId: string
+    monitorName: string
+    events: IncidentEvent[]
+    incidentId: string
 }
 
 function translateError(msg: string): string {
     if (!msg) return ''
-    if (msg.includes('timed out')) return '请求超时 (Timed out)'
+    if (msg.includes('timed out') || msg.includes('timeout')) return '请求超时 (Timed out)'
     if (msg.includes('fetch failed')) return '抓取失败 (Fetch failed)'
     if (msg.includes('connection reset')) return '连接重置 (Connection reset)'
     if (msg.includes('ECONNREFUSED')) return '拒绝连接 (Connection refused)'
@@ -80,8 +79,8 @@ export default function PastIncidents({
     // 2. Sort by time descending
     allEvents.sort((a, b) => b.time - a.time)
 
-    // 3. Group by EXACT Time -> Unique Incident Card
-    const dateSections: { dateLabel: string; incidents: GroupedIncident[] }[] = []
+    // 3. Group by Date -> Monitor
+    const dateSections: { dateLabel: string; incidents: DailyIncident[] }[] = []
 
     allEvents.forEach(event => {
         const d = new Date(event.time * 1000)
@@ -93,35 +92,17 @@ export default function PastIncidents({
             dateSections.push(section)
         }
 
-        // Group by Time
-        let grouped = section.incidents.find(gi => gi.time === event.time)
-        if (!grouped) {
-            grouped = {
-                time: event.time,
-                type: event.type,
-                monitors: [],
-                maxUpdates: 0
+        let monitorGroup = section.incidents.find(i => i.monitorId === event.monitorId)
+        if (!monitorGroup) {
+            monitorGroup = {
+                monitorId: event.monitorId,
+                monitorName: event.monitorName,
+                events: [],
+                incidentId: event.incidentId // Use the ID of the most recent event (since sorted)
             }
-            section.incidents.push(grouped)
+            section.incidents.push(monitorGroup)
         }
-
-        // Track unique monitors down at this exact time
-        if (!grouped.monitors.find(m => m.id === event.monitorId)) {
-            const monitorIncidentCount = (state.incident[event.monitorId]?.find(inc => `${event.monitorId}-${inc.start[0]}` === event.incidentId)?.error?.length || 0) +
-                (state.incident[event.monitorId]?.find(inc => `${event.monitorId}-${inc.start[0]}` === event.incidentId)?.end ? 1 : 0);
-
-            grouped.monitors.push({
-                id: event.monitorId,
-                name: event.monitorName,
-                type: event.type,
-                message: event.message,
-                incidentId: event.incidentId
-            })
-
-            if (monitorIncidentCount > grouped.maxUpdates) {
-                grouped.maxUpdates = monitorIncidentCount;
-            }
-        }
+        monitorGroup.events.push(event)
     })
 
     // 4. Homepage: Only show the ONE most recent DATE section
@@ -132,7 +113,7 @@ export default function PastIncidents({
             <Text fw={700} ta="center" size="32px" mb={48} style={{ letterSpacing: '-0.4px', color: '#ffffff' }}>以前的事件</Text>
 
             {displaySections.length === 0 ? (
-                <Box bg="rgb(18, 20, 26)" p={40} style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
+                <Box bg="rgb(18, 20, 26)" p={40} style={{ borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
                     <Group justify="center" gap="xs" style={{ color: 'rgb(138, 145, 165)' }}>
                         <IconCircleCheck size={18} />
                         <Text size="15px" fw={500}>没有报告事件</Text>
@@ -144,54 +125,63 @@ export default function PastIncidents({
                         <Box key={sIdx}>
                             <Text size="13px" fw={500} c="rgb(138, 145, 165)" mb={16} ml={4}>{section.dateLabel}</Text>
                             <Stack gap={16}>
-                                {section.incidents.map((incident, iIdx) => (
-                                    <Box key={iIdx} component="a" href={`/incident/${incident.monitors[0].incidentId}`} style={{ textDecoration: 'none', display: 'block' }}>
-                                        <Box style={{ position: 'relative' }}>
-                                            {/* Stacking effect based on max history updates among aggregated services */}
-                                            {incident.maxUpdates > 1 && (
-                                                <>
-                                                    <div style={{ position: 'absolute', bottom: '-4px', left: '8px', right: '8px', height: '10px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 16px 16px', zIndex: 0 }} />
-                                                    <div style={{ position: 'absolute', bottom: '-8px', left: '16px', right: '16px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 16px 16px', zIndex: -1 }} />
-                                                </>
-                                            )}
+                                {section.incidents.map((incident, iIdx) => {
+                                    const downEvents = incident.events.filter(e => e.type === 'down')
+                                    const count = downEvents.length
+                                    const latestEvent = incident.events[0]
 
-                                            <Box p="md" bg="rgb(22, 24, 30)" style={{ borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 1 }}>
-                                                <Group justify="space-between" mb={14}>
-                                                    <Group gap="xs">
-                                                        {monitors.find(m => m.id === incident.monitors[0].id)?.icon && (
-                                                            <img
-                                                                src={monitors.find(m => m.id === incident.monitors[0].id)?.icon}
-                                                                style={{ width: '18px', height: '18px', borderRadius: '4px' }}
-                                                                alt=""
-                                                            />
-                                                        )}
-                                                        <Text fw={700} size="15px" c="#ffffff">
-                                                            {incident.monitors.length > 1 ? `${incident.monitors.length} 个服务检测到异常` : `${incident.monitors[0].name} 检测到故障`}
-                                                        </Text>
-                                                    </Group>
-                                                    <Badge variant="filled" bg="rgba(239, 68, 68, 0.1)" c="#EF4444" radius="xl" size="sm" fw={700} style={{ textTransform: 'none' }}>停机</Badge>
-                                                </Group>
-
-                                                <Group gap="sm" align="flex-start" wrap="nowrap">
-                                                    <ThemeIcon size={18} variant="transparent" color={incident.type === 'up' ? '#10b981' : '#ef4444'} mt={2}>
-                                                        {incident.type === 'up' ? <IconCircleCheck size={18} /> : <IconAlertCircle size={18} />}
-                                                    </ThemeIcon>
-                                                    <Stack gap={2}>
-                                                        <Text size="13px" fw={600} c="#ffffff">{incident.type === 'up' ? '已解决' : '检测到故障'} {new Date(incident.time * 1000).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} UTC+8</Text>
-                                                        <Text size="13px" c="rgb(138, 145, 165)">{incident.monitors[0].message}</Text>
-                                                    </Stack>
-                                                </Group>
-
-                                                {incident.maxUpdates > 1 && (
-                                                    <Group gap="sm" mt={16} ml={3}>
-                                                        <Box style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px dotted rgb(138, 145, 165)' }} />
-                                                        <Text size="13px" fw={500} c="rgb(138, 145, 165)">多于之前的 {incident.maxUpdates - 1} 次更新</Text>
-                                                    </Group>
+                                    return (
+                                        <Box key={iIdx} component="a" href={`/incident/${incident.incidentId}`} style={{ textDecoration: 'none', display: 'block' }}>
+                                            <Box style={{ position: 'relative' }}>
+                                                {/* Stacking effect if multiple incidents */}
+                                                {count > 1 && (
+                                                    <>
+                                                        <div style={{ position: 'absolute', bottom: '-4px', left: '8px', right: '8px', height: '10px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 16px 16px', zIndex: 0 }} />
+                                                        <div style={{ position: 'absolute', bottom: '-8px', left: '16px', right: '16px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 16px 16px', zIndex: -1 }} />
+                                                    </>
                                                 )}
+
+                                                <Box p="md" bg="rgb(22, 24, 30)" style={{ borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 1 }}>
+                                                    <Group justify="space-between" mb={14}>
+                                                        <Group gap="xs">
+                                                            {monitors.find(m => m.id === incident.monitorId)?.icon && (
+                                                                <img
+                                                                    src={monitors.find(m => m.id === incident.monitorId)?.icon}
+                                                                    style={{ width: '18px', height: '18px', borderRadius: '4px' }}
+                                                                    alt=""
+                                                                />
+                                                            )}
+                                                            <Text fw={700} size="15px" c="#ffffff">
+                                                                {incident.monitorName} 检测到故障
+                                                            </Text>
+                                                        </Group>
+                                                        <Badge variant="filled" bg="rgba(239, 68, 68, 0.1)" c="#EF4444" radius="xl" size="sm" fw={700} style={{ textTransform: 'none' }}>停机</Badge>
+                                                    </Group>
+
+                                                    <Group gap="sm" align="flex-start" wrap="nowrap">
+                                                        <ThemeIcon size={18} variant="transparent" color={latestEvent.type === 'up' ? '#10b981' : '#ef4444'} mt={2}>
+                                                            {latestEvent.type === 'up' ? <IconCircleCheck size={18} /> : <IconAlertCircle size={18} />}
+                                                        </ThemeIcon>
+                                                        <Stack gap={2}>
+                                                            {/* Show summary of incidents if multiple */}
+                                                            {count > 1 ? (
+                                                                <>
+                                                                    <Text size="13px" fw={600} c="#ffffff">当日共发生 {count} 次故障</Text>
+                                                                    <Text size="13px" c="rgb(138, 145, 165)">最近一次: {new Date(latestEvent.time * 1000).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} UTC+8</Text>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Text size="13px" fw={600} c="#ffffff">{latestEvent.type === 'up' ? '已解决' : '检测到故障'} {new Date(latestEvent.time * 1000).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} UTC+8</Text>
+                                                                    <Text size="13px" c="rgb(138, 145, 165)">{latestEvent.message}</Text>
+                                                                </>
+                                                            )}
+                                                        </Stack>
+                                                    </Group>
+                                                </Box>
                                             </Box>
                                         </Box>
-                                    </Box>
-                                ))}
+                                    )
+                                })}
                             </Stack>
                         </Box>
                     ))}

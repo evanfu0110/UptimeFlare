@@ -7,6 +7,7 @@ import { getColor } from '@/util/color'
 import { maintenances } from '@/uptime.config'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@iconify/react'
+import { useState } from 'react'
 
 export default function MonitorDetail({
   monitor,
@@ -16,6 +17,7 @@ export default function MonitorDetail({
   state: MonitorState
 }) {
   const { t } = useTranslation('common')
+  const [expanded, setExpanded] = useState(false)
 
   const isUrlIcon = monitor.icon?.startsWith('http') || monitor.icon?.startsWith('/')
   const renderIcon = (marginRight = '4px') => {
@@ -83,11 +85,17 @@ export default function MonitorDetail({
   const uptimePercent = (((totalTime - downTime) / totalTime) * 100).toPrecision(4)
 
   const statusText = hasMaintenance ? '维护中' : (isDown ? '已宕机' : '正常运行')
+  const latestPing = state.latency[monitor.id].slice(-1)[0]?.ping
 
   return (
     <Box>
-      <Group justify="space-between" mb={12} align="flex-end">
-        <Group gap="xs" align="center">
+      <Group justify="space-between" mb={12} align="center">
+        <a
+          href={(monitor as any).url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
           <ThemeIcon variant="transparent" size={18} color={isDown ? '#ef4444' : '#10b981'}>
             {isDown ? <IconAlertCircle size={18} /> : <IconCircleCheck size={18} />}
           </ThemeIcon>
@@ -95,14 +103,12 @@ export default function MonitorDetail({
           <Text size="15px" fw={500} c="#ffffff" style={{ lineHeight: '22.5px' }}>
             {monitor.name}
           </Text>
-        </Group>
-        <Group gap="sm" align="center">
+          <IconChevronRight size={16} color="rgb(138, 145, 165)" />
+        </a>
+
+        <Group gap="sm" align="center" onClick={() => setExpanded(!expanded)} style={{ cursor: 'pointer' }}>
           <Text size="13px" fw={500} c="rgb(138, 145, 165)" style={{ lineHeight: '19.5px' }}>
-            {state.latency[monitor.id].length > 0 ? (
-              `${state.latency[monitor.id].slice(-1)[0].ping}ms`
-            ) : (
-              <></>
-            )}
+            {latestPing ? `${latestPing}ms` : ''}
             {' '}{uptimePercent}% 的正常运行时间
           </Text>
           <Badge
@@ -120,12 +126,17 @@ export default function MonitorDetail({
           >
             {statusText}
           </Badge>
+          <IconChevronRight
+            size={16}
+            color="rgb(138, 145, 165)"
+            style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+          />
         </Group>
       </Group>
 
       <DetailBar monitor={monitor} state={state} />
 
-      {!monitor.hideLatencyChart && (
+      {expanded && !monitor.hideLatencyChart && (
         <Box mt="xs">
           <DetailChart monitor={monitor} state={state} />
         </Box>
