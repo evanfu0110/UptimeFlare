@@ -14,6 +14,12 @@ const pageConfig: PageConfig = {
     { link: 'https://blog.ftianyu.cn', label: '博客' },
   ],
   customFooter: '<p style="text-align: center; font-size: 12px; margin-top: 10px;">Cola Monitor Powered by Uptimeflare<br><a href="https://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">鄂ICP备2026001768号-1</a></p>',
+
+  group: {
+    'Cola Project': ['COLA-BLOG', 'cola-cover', 'cola-search'],
+    'HVH Network': ['cshvh', 'HVH.ONE'],
+    'Server Status': ['aliyun_ssh', 'qxy_ssh', 'hvhone_rdp'],
+  },
 }
 
 const workerConfig: WorkerConfig = {
