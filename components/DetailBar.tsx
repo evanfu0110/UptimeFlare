@@ -50,7 +50,9 @@ export default function DetailBar({
       // Filter out short incidents < 60 seconds (network glitch)
       const duration = incidentEnd - incidentStart
       if (duration < 60) {
-        hasGlitches = true
+        if (overlapLen(dayStart, dayEnd, incidentStart, incidentEnd) > 0) {
+          hasGlitches = true
+        }
         continue
       }
 
@@ -185,7 +187,7 @@ function UptimeBar({
             )}
             {dayDownTime === 0 && hasGlitches && (
               <Text size="xs" c="#f97316" fw={500} mt={4}>
-                {t('System Jitter Detected')}
+                检测到系统抖动
               </Text>
             )}
           </>
