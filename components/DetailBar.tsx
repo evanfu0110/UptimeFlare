@@ -39,6 +39,7 @@ export default function DetailBar({
 
     const dayMonitorTime = overlapLen(dayStart, dayEnd, montiorStartTime, currentTime)
     let dayDownTime = 0
+    let hasGlitches = false
 
     let incidentReasons: string[] = []
 
@@ -46,9 +47,12 @@ export default function DetailBar({
       const incidentStart = incident.start[0]
       const incidentEnd = incident.end ?? currentTime
 
-      // Filter out short incidents < 10 seconds (network glitch)
+      // Filter out short incidents < 60 seconds (network glitch)
       const duration = incidentEnd - incidentStart
-      if (duration < 10) continue
+      if (duration < 60) {
+        hasGlitches = true
+        continue
+      }
 
       const overlap = overlapLen(dayStart, dayEnd, incidentStart, incidentEnd)
       dayDownTime += overlap
@@ -88,6 +92,7 @@ export default function DetailBar({
         i={i}
         t={t}
         monitorId={monitor.id}
+        hasGlitches={hasGlitches}
       />
     )
   }
@@ -133,6 +138,7 @@ function UptimeBar({
   i,
   t,
   monitorId,
+  hasGlitches
 }: {
   dayStart: number
   dayPercent: string
@@ -140,6 +146,7 @@ function UptimeBar({
   i: number
   t: any
   monitorId: string
+  hasGlitches: boolean
 }) {
   const isNoData = Number.isNaN(Number(dayPercent)) || (Number(dayPercent) === 0 && dayDownTime === 0);
 
@@ -176,6 +183,11 @@ function UptimeBar({
                 })}
               </Text>
             )}
+            {dayDownTime === 0 && hasGlitches && (
+              <Text size="xs" c="#f97316" fw={500} mt={4}>
+                {t('System Jitter Detected')}
+              </Text>
+            )}
           </>
         )
       }
@@ -185,8 +197,11 @@ function UptimeBar({
           height: '34px',
           flex: 1,
           background: isNoData
+          background: isNoData
             ? 'rgba(255, 255, 255, 0.05)'
-            : (dayDownTime === 0 ? '#10b981' : (Number(dayPercent) > 95 ? '#f59e0b' : '#ef4444')),
+            : (dayDownTime === 0
+              ? (hasGlitches ? '#a7f3d0' : '#10b981')
+              : (Number(dayPercent) > 95 ? '#f59e0b' : '#ef4444')),
           borderRadius: '2px', // vps.2x.nz rounding for every bar
           transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
           cursor: isNoData ? 'default' : (dayDownTime > 0 ? 'pointer' : 'default'),

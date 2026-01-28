@@ -62,6 +62,13 @@ export default function App({ Component, pageProps }: AppProps) {
           * {
             transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
           }
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          main {
+            animation: fadeInUp 0.4s ease-out;
+          }
         `}</style>
         <TimeAutoSwitch />
         <Component {...pageProps} />

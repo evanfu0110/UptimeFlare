@@ -91,7 +91,7 @@ export default function MonitorDetail({
     <Box>
       <Group justify="space-between" mb={12} align="center">
         <a
-          href={(monitor as any).url}
+          href={(monitor as any).url || (monitor as any).target}
           target="_blank"
           rel="noopener noreferrer"
           style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
@@ -108,8 +108,7 @@ export default function MonitorDetail({
 
         <Group gap="sm" align="center" onClick={() => setExpanded(!expanded)} style={{ cursor: 'pointer' }}>
           <Text size="13px" fw={500} c="rgb(138, 145, 165)" style={{ lineHeight: '19.5px' }}>
-            {latestPing ? `${latestPing}ms` : ''}
-            {' '}{uptimePercent}% 的正常运行时间
+            {uptimePercent}% 的正常运行时间
           </Text>
           <Badge
             variant="filled"

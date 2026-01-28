@@ -43,18 +43,14 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
         if (state.incident[monId]) {
             // Find all incidents for this monitor on the SAME DAY as the clicked incident
             const targetTime = parseInt(startTs)
-            const targetDate = new Date(targetTime * 1000)
-            const targetDateStr = `${targetDate.getFullYear()}-${targetDate.getMonth()}-${targetDate.getDate()}`
+            const targetTimeEnd = targetTime + 86400
 
             dayIncidents = state.incident[monId].filter(inc => {
-                const incDate = new Date(inc.start[0] * 1000)
-                const incDateStr = `${incDate.getFullYear()}-${incDate.getMonth()}-${incDate.getDate()}`
-
-                // Filter out short incidents < 10 minute
+                // Filter out short incidents < 1 minute
                 const duration = (inc.end || Date.now() / 1000) - inc.start[0]
-                if (duration < 10) return false;
+                if (duration < 60) return false;
 
-                return incDateStr === targetDateStr
+                return inc.start[0] >= targetTime && inc.start[0] < targetTimeEnd
             })
 
             // Sort by time descending (latest first)

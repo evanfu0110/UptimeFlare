@@ -60,9 +60,9 @@ export default function IncidentsPage({ compactedStateStr, monitors }: { compact
     monitorIncidents.forEach(incident => {
       const incidentId = `${monitor.id}-${incident.start[0]}`
 
-      // Filter out short incidents < 10 seconds
+      // Filter out short incidents < 60 seconds
       const duration = (incident.end || Date.now() / 1000) - incident.start[0]
-      if (duration < 10) return
+      if (duration < 60) return
 
       incident.error.forEach((errorMsg, idx) => {
         const startTime = incident.start[idx]

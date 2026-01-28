@@ -81,11 +81,11 @@ export async function getServerSideProps() {
       name: monitor.name,
       // @ts-ignore
       tooltip: monitor?.tooltip,
-      // @ts-ignore
-      statusPageLink: monitor?.statusPageLink,
-      // @ts-ignore
       hideLatencyChart: monitor?.hideLatencyChart,
       icon: monitor.icon,
+      // @ts-ignore
+      url: monitor.url,
+      target: monitor.target,
     }
   })
 
