@@ -1,26 +1,16 @@
 import Head from 'next/head'
-
 import { Inter } from 'next/font/google'
-import { MaintenanceConfig, MonitorState, MonitorTarget } from '@/types/config'
+import { MonitorState, MonitorTarget } from '@/types/config'
 import { pageConfig, workerConfig } from '@/uptime.config'
 import Header from '@/components/Header'
-import { Box, Button, Center, Container, Group, Select, Text, Stack, Title, Badge } from '@mantine/core'
+import { Box, Container, Group, Select, Text, Stack, Title, Badge, ThemeIcon } from '@mantine/core'
 import Footer from '@/components/Footer'
-import { useEffect, useState } from 'react'
-import MaintenanceAlert from '@/components/MaintenanceAlert'
-import NoIncidentsAlert from '@/components/NoIncidents'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CompactedMonitorStateWrapper, getFromStore } from '@/worker/src/store'
 import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react'
-import { Card, ThemeIcon } from '@mantine/core'
 
-export const runtime = 'experimental-edge'
 const inter = Inter({ subsets: ['latin'] })
-
-interface IncidentPageProps {
-  compactedStateStr: string
-  monitors: MonitorTarget[]
-}
 
 interface IncidentEvent {
   id: string
@@ -29,6 +19,7 @@ interface IncidentEvent {
   monitorName: string
   message: string
   incidentId: string
+  monitorId: string
 }
 
 function translateError(msg: string): string {
@@ -44,251 +35,189 @@ function translateError(msg: string): string {
   return msg
 }
 
-function filterEventsByMonth(
-  state: MonitorState,
-  monitors: MonitorTarget[],
-  monthStr: string
-): IncidentEvent[] {
-  const events: IncidentEvent[] = []
+export default function IncidentsPage({ compactedStateStr, monitors }: { compactedStateStr: string; monitors: MonitorTarget[] }) {
+  const { t } = useTranslation('common')
+  const [selectedMonitor, setSelectedMonitor] = useState<string | null>('')
 
-  monitors.forEach((monitor) => {
-    const monitorIncidents = state.incident[monitor.id]
-    if (!monitorIncidents) return
+  let state = new CompactedMonitorStateWrapper(compactedStateStr).uncompact()
 
-    monitorIncidents.forEach((incident) => {
+  const allEvents: IncidentEvent[] = []
+  monitors.forEach(monitor => {
+    const monitorIncidents = state.incident[monitor.id] || []
+    monitorIncidents.forEach(incident => {
       const incidentId = `${monitor.id}-${incident.start[0]}`
-
-      // Handle each error slice in an incident
       incident.error.forEach((errorMsg, idx) => {
         const startTime = incident.start[idx]
-        const d = new Date(startTime * 1000)
-        const incidentMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
-
-        if (incidentMonth === monthStr) {
-          events.push({
-            id: `${monitor.id}-${startTime}-down`,
-            type: 'downtime',
-            time: startTime,
-            monitorName: monitor.name,
-            message: translateError(errorMsg),
-            incidentId: incidentId,
-          })
-        }
+        allEvents.push({
+          id: `${monitor.id}-${startTime}-down`,
+          type: 'downtime',
+          time: startTime,
+          monitorName: monitor.name,
+          message: translateError(errorMsg),
+          incidentId,
+          monitorId: monitor.id
+        })
       })
-
       if (incident.end) {
-        const d = new Date(incident.end * 1000)
-        const incidentMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
-        if (incidentMonth === monthStr) {
-          events.push({
-            id: `${monitor.id}-${incident.end}-up`,
-            type: 'restored',
-            time: incident.end,
-            monitorName: monitor.name,
-            message: '服务已恢复正常',
-            incidentId: incidentId,
-          })
-        }
+        allEvents.push({
+          id: `${monitor.id}-${incident.end}-up`,
+          type: 'restored',
+          time: incident.end,
+          monitorName: monitor.name,
+          message: '服务已恢复正常',
+          incidentId,
+          monitorId: monitor.id
+        })
       }
     })
   })
 
-  return events.sort((a, b) => b.time - a.time)
-}
+  allEvents.sort((a, b) => b.time - a.time)
 
-export default function IncidentsPage({ compactedStateStr, monitors }: IncidentPageProps) {
-  const { t } = useTranslation('common')
-  const [selectedMonitor, setSelectedMonitor] = useState<string | null>('')
-  const [selectedMonth, setSelectedMonth] = useState('')
+  const filteredEvents = selectedMonitor
+    ? allEvents.filter(e => e.monitorId === selectedMonitor)
+    : allEvents
 
-  useEffect(() => {
-    const hash = window.location.hash.replace('#', '')
-    if (hash && hash.includes('-')) {
-      setSelectedMonth(hash)
-    } else {
-      const now = new Date()
-      setSelectedMonth(now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'))
+  // Group events by IncidentId to find the latest state for each incident on a specific day
+  const incidentGroups: { [key: string]: IncidentEvent[] } = {}
+  filteredEvents.forEach(event => {
+    if (!incidentGroups[event.incidentId]) incidentGroups[event.incidentId] = []
+    incidentGroups[event.incidentId].push(event)
+  })
+
+  // Multi-level Grouping: Year-Month > Date > Unique Incidents
+  const monthSections: { monthLabel: string; days: { dateLabel: string; incidents: { latest: IncidentEvent; count: number }[] }[] }[] = []
+
+  Object.values(incidentGroups).forEach(events => {
+    const latest = events[0] // Sorted by time desc
+    const d = new Date(latest.time * 1000)
+    const monthLabel = `${d.getFullYear()}年${d.getMonth() + 1}月`
+    const dateLabel = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
+
+    let monthSection = monthSections.find(m => m.monthLabel === monthLabel)
+    if (!monthSection) {
+      monthSection = { monthLabel, days: [] }
+      monthSections.push(monthSection)
     }
-  }, [])
 
-  let state = new CompactedMonitorStateWrapper(compactedStateStr).uncompact()
-
-  const filteredEvents = selectedMonth ? filterEventsByMonth(state, monitors, selectedMonth) : []
-  const monitorFilteredEvents = selectedMonitor
-    ? filteredEvents.filter((e) => monitors.find((m) => m.name === e.monitorName)?.id === selectedMonitor)
-    : filteredEvents
-
-  const getPrevNextMonth = (monthStr: string) => {
-    if (!monthStr) return { prev: '', next: '' }
-    const [year, month] = monthStr.split('-').map(Number)
-    const date = new Date(year, month - 1)
-    const prev = new Date(date)
-    prev.setMonth(prev.getMonth() - 1)
-    const next = new Date(date)
-    next.setMonth(next.getMonth() + 1)
-    return {
-      prev: prev.getFullYear() + '-' + String(prev.getMonth() + 1).padStart(2, '0'),
-      next: next.getFullYear() + '-' + String(next.getMonth() + 1).padStart(2, '0'),
+    let daySection = monthSection.days.find(day => day.dateLabel === dateLabel)
+    if (!daySection) {
+      daySection = { dateLabel, incidents: [] }
+      monthSection.days.push(daySection)
     }
-  }
 
-  const { prev, next } = getPrevNextMonth(selectedMonth)
+    daySection.incidents.push({ latest, count: events.length })
+  })
 
-  const monitorOptions = [
-    { value: '', label: t('All') },
-    ...monitors.map((monitor) => ({
-      value: monitor.id,
-      label: monitor.name,
-    })),
-  ]
+  // Sort sections and days descending
+  monthSections.sort((a, b) => {
+    const parse = (s: string) => {
+      const m = s.match(/(\d+)年(\d+)月/);
+      return m ? parseInt(m[1]) * 12 + parseInt(m[2]) : 0;
+    };
+    return parse(b.monthLabel) - parse(a.monthLabel);
+  });
+
+  monthSections.forEach(m => {
+    m.days.sort((a, b) => {
+      const parse = (s: string) => {
+        const m = s.match(/(\d+)年(\d+)月(\d+)日/);
+        return m ? new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3])).getTime() : 0;
+      };
+      return parse(b.dateLabel) - parse(a.dateLabel);
+    });
+  });
 
   return (
     <>
       <Head>
-        <title>{pageConfig.title}</title>
+        <title>事件 | Cola Monitor</title>
         <link rel="icon" href={pageConfig.favicon ?? '/favicon.ico'} />
       </Head>
 
       <main className={inter.className}>
         <Header />
-        <Center mt="xl" pb="xl">
-          <Container size="md" style={{ width: '100%' }}>
-            <Title size="h2" mb="xl" ta="center" fw={700}>
-              全量故障历史
-            </Title>
+        <Container size="md" pb={80}>
+          <Title order={1} mt={40} mb={32} ta="center" style={{ fontSize: '32px', letterSpacing: '-0.4px' }}>
+            以前的事件
+          </Title>
 
-            <Group justify="space-between" mb="md">
-              <Group gap="xs">
-                <Button variant="default" size="xs" radius="md" onClick={() => {
-                  window.location.hash = prev
-                  setSelectedMonth(prev)
-                }}>
-                  {t('Backwards')}
-                </Button>
-                <Badge variant="light" size="lg" radius="md" color="teal">{selectedMonth}</Badge>
-                <Button variant="default" size="xs" radius="md" onClick={() => {
-                  window.location.hash = next
-                  setSelectedMonth(next)
-                }}>
-                  {t('Forward')}
-                </Button>
-              </Group>
-              <Select
-                placeholder={t('Select monitor')}
-                data={monitorOptions}
-                value={selectedMonitor}
-                onChange={setSelectedMonitor}
-                clearable
-                radius="md"
-                style={{ width: 220 }}
-              />
-            </Group>
+          <Group justify="center" mb={64}>
+            <Select
+              placeholder="选择监控项"
+              data={[{ value: '', label: '全部服务' }, ...monitors.map(m => ({ value: m.id, label: m.name }))]}
+              value={selectedMonitor}
+              onChange={setSelectedMonitor}
+              radius="md"
+              style={{ width: 240 }}
+            />
+          </Group>
 
-            <Stack gap="xs">
-              {monitorFilteredEvents.length === 0 ? (
-                <Card padding="xl" radius="lg" shadow="sm" withBorder style={{ backgroundColor: '#111318', borderColor: '#21242d', textAlign: 'center' }}>
-                  <Text c="#8a91a5">{t('No data available')}</Text>
-                </Card>
-              ) : (
-                monitorFilteredEvents.map((event, idx) => {
-                  const hasUp = event.type === 'downtime' && monitorFilteredEvents.some(e => e.type === 'restored' && e.incidentId === event.incidentId);
-                  const isLinkedToNext = idx > 0 && monitorFilteredEvents[idx - 1].incidentId === event.incidentId;
-
-                  return (
-                    <Box key={event.id} style={{ position: 'relative', marginBottom: '16px' }}>
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '-4px',
-                        left: '4px',
-                        right: '4px',
-                        height: '10px',
-                        backgroundColor: '#111318',
-                        border: '1px solid #21242d',
-                        borderTop: 'none',
-                        borderRadius: '0 0 12px 12px',
-                        zIndex: 1,
-                        opacity: 0.6
-                      }} />
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '-8px',
-                        left: '8px',
-                        right: '8px',
-                        height: '10px',
-                        backgroundColor: '#111318',
-                        border: '1px solid #21242d',
-                        borderTop: 'none',
-                        borderRadius: '0 0 12px 12px',
-                        zIndex: 0,
-                        opacity: 0.3
-                      }} />
-
-                      <Card
-                        padding="md"
-                        radius="md"
-                        withBorder
-                        shadow="xs"
-                        style={{
-                          backgroundColor: '#111318',
-                          borderColor: '#21242d',
-                          position: 'relative',
-                          zIndex: 2,
-                        }}
-                      >
-                        <Group justify="space-between">
-                          <Group gap="sm">
-                            <div style={{ position: 'relative' }}>
-                              <ThemeIcon
-                                color={event.type === 'downtime' ? '#ef4444' : '#10b981'}
-                                variant="light"
-                                bg={event.type === 'downtime' ? '#ef444420' : '#10b98120'}
-                                radius="xl"
-                                style={{ position: 'relative', zIndex: 10 }}
-                              >
-                                {event.type === 'downtime' ? <IconAlertCircle size={16} /> : <IconCircleCheck size={16} />}
-                              </ThemeIcon>
-
-                              {((event.type === 'downtime' && hasUp) || (event.type === 'restored' && isLinkedToNext)) && (
-                                <div style={{
-                                  position: 'absolute',
-                                  top: event.type === 'downtime' ? '100%' : '-100%',
-                                  left: '50%',
-                                  width: '2px',
-                                  height: '40px',
-                                  backgroundColor: '#21242d',
-                                  transform: 'translateX(-50%)',
-                                  zIndex: 5
-                                }} />
-                              )}
-                            </div>
-                            <div>
-                              <Text fw={600} size="sm" c="#ffffff">
-                                {event.monitorName} {event.type === 'downtime' ? '检测到故障' : '服务已恢复正常'}
-                              </Text>
-                              {event.message && (
-                                <Text size="xs" c="#8a91a5">
-                                  {event.message}
-                                </Text>
-                              )}
-                            </div>
+          <Stack gap={48}>
+            {monthSections.length === 0 ? (
+              <Box bg="rgb(18, 20, 26)" p={40} style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
+                <Group justify="center" gap="xs" style={{ color: 'rgb(138, 145, 165)' }}>
+                  <IconCircleCheck size={18} />
+                  <Text size="15px" fw={500}>没有报告事件</Text>
+                </Group>
+              </Box>
+            ) : monthSections.map((month, mIdx) => (
+              <Box key={mIdx}>
+                <Box bg="rgb(18, 20, 26)" p="md" style={{ borderRadius: '8px 8px 0 0', border: '1px solid rgba(255, 255, 255, 0.05)', borderBottom: 'none' }}>
+                  <Text fw={700} size="15px">{month.monthLabel}</Text>
+                </Box>
+                <Stack gap={0} style={{ border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 8px 8px', overflow: 'hidden' }}>
+                  {month.days.map((day, dIdx) => (
+                    <Box key={dIdx} style={{ borderTop: dIdx === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <Group justify="space-between" p="md" bg="rgb(22, 24, 30)">
+                        <Text size="13px" fw={500} c="rgb(138, 145, 165)">{day.dateLabel}</Text>
+                        <Text size="13px" fw={500} c="rgb(138, 145, 165)">{day.incidents.length} 次事件</Text>
+                      </Group>
+                      {day.incidents.map((incident, iIdx) => (
+                        <Box key={iIdx} p="md" bg="rgb(15, 18, 26)" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                          <Group justify="space-between" mb="xs">
+                            <Text fw={700} size="15px" c="#ffffff">{incident.latest.monitorName} detection failure</Text>
+                            <Badge variant="filled" bg="rgba(239, 68, 68, 0.1)" c="#EF4444" radius="xl" size="sm" fw={700} style={{ textTransform: 'none' }}>停机</Badge>
                           </Group>
-                          <Text size="xs" c="#8a91a5" fw={500}>
-                            {new Date(event.time * 1000).toLocaleString('zh-CN', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </Text>
-                        </Group>
-                      </Card>
+
+                          <Box style={{ position: 'relative', marginTop: '12px' }}>
+                            {/* Stacking effect */}
+                            {incident.count > 1 && (
+                              <>
+                                <div style={{ position: 'absolute', bottom: '-4px', left: '4px', right: '4px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 8px 8px', zIndex: 0 }} />
+                                <div style={{ position: 'absolute', bottom: '-8px', left: '8px', right: '8px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 8px 8px', zIndex: -1 }} />
+                              </>
+                            )}
+
+                            <Box p="md" bg="rgba(255, 255, 255, 0.03)" style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', position: 'relative', zIndex: 1 }}>
+                              <Group gap="sm" align="flex-start">
+                                <ThemeIcon size={18} variant="transparent" color={incident.latest.type === 'restored' ? '#10b981' : '#ef4444'} mt={2}>
+                                  {incident.latest.type === 'restored' ? <IconCircleCheck size={18} /> : <IconAlertCircle size={18} />}
+                                </ThemeIcon>
+                                <Stack gap={2}>
+                                  <Text size="13px" fw={600}>{incident.latest.type === 'restored' ? '已解决' : '检测到故障'} {new Date(incident.latest.time * 1000).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} UTC+8</Text>
+                                  <Text size="13px" c="rgb(138, 145, 165)">{incident.latest.message}</Text>
+                                </Stack>
+                              </Group>
+                            </Box>
+
+                            {incident.count > 1 && (
+                              <Group gap="sm" mt={16} ml={2}>
+                                <Box style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px dotted rgb(138, 145, 165)' }} />
+                                <Text size="13px" fw={500} c="rgb(138, 145, 165)">多于之前的 {incident.count - 1} 次更新</Text>
+                                <div style={{ position: 'absolute', top: '100%', left: '8px', width: '2px', height: '12px', background: 'rgba(255, 255, 255, 0.05)' }} />
+                              </Group>
+                            )}
+                          </Box>
+                        </Box>
+                      ))}
                     </Box>
-                  )
-                })
-              )}
-            </Stack>
-          </Container>
-        </Center>
+                  ))}
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
+        </Container>
         <Footer />
       </main>
     </>
@@ -303,4 +232,3 @@ export async function getServerSideProps() {
   }))
   return { props: { compactedStateStr, monitors } }
 }
-

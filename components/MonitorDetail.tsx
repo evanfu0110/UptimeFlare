@@ -1,6 +1,6 @@
-import { Text, Tooltip } from '@mantine/core'
+import { Box, Group, Text, Badge, ThemeIcon, Tooltip } from '@mantine/core'
 import { MonitorState, MonitorTarget } from '@/types/config'
-import { IconAlertCircle, IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
+import { IconAlertCircle, IconAlertTriangle, IconCircleCheck, IconChevronRight } from '@tabler/icons-react'
 import DetailChart from './DetailChart'
 import DetailBar from './DetailBar'
 import { getColor } from '@/util/color'
@@ -52,44 +52,27 @@ export default function MonitorDetail({
 
   if (!state.latency[monitor.id])
     return (
-      <>
-        <Text mt="sm" fw={700} style={{ display: 'flex', alignItems: 'center' }}>
-          {renderIcon('8px')}
-          {monitor.name}
-        </Text>
-        <Text mt="sm" fw={700}>
+      <Box py="sm">
+        <Group gap="xs" align="center">
+          {renderIcon()}
+          <Text size="15px" fw={500} c="#ffffff" style={{ lineHeight: '22.5px' }}>
+            {monitor.name}
+          </Text>
+        </Group>
+        <Text mt="xs" fw={500} size="sm" c="rgb(138, 145, 165)">
           {t('No data available')}
         </Text>
-      </>
+      </Box>
     )
 
-  let statusIcon =
-    state.incident[monitor.id].slice(-1)[0].end === undefined ? (
-      <IconAlertCircle
-        style={{ width: '1.25em', height: '1.25em', color: '#b91c1c', marginRight: '4px' }}
-      />
-    ) : (
-      <IconCircleCheck
-        style={{ width: '1.25em', height: '1.25em', color: '#059669', marginRight: '4px' }}
-      />
-    )
+  const latestIncident = state.incident[monitor.id].slice(-1)[0]
+  const isDown = latestIncident.end === undefined
 
   // Hide real status icon if monitor is in maintenance
   const now = new Date()
   const hasMaintenance = maintenances
     .filter((m) => now >= new Date(m.start) && (!m.end || now <= new Date(m.end)))
     .find((maintenance) => maintenance.monitors?.includes(monitor.id))
-  if (hasMaintenance)
-    statusIcon = (
-      <IconAlertTriangle
-        style={{
-          width: '1.25em',
-          height: '1.25em',
-          color: '#fab005',
-          marginRight: '4px',
-        }}
-      />
-    )
 
   let totalTime = Date.now() / 1000 - state.incident[monitor.id][0].start[0]
   let downTime = 0
@@ -99,61 +82,38 @@ export default function MonitorDetail({
 
   const uptimePercent = (((totalTime - downTime) / totalTime) * 100).toPrecision(4)
 
-  const statusText = hasMaintenance ? '维护中' : (state.incident[monitor.id].slice(-1)[0].end === undefined ? '已宕机' : '正常运行')
-  const statusColorHex = hasMaintenance ? '#f59e0b' : (state.incident[monitor.id].slice(-1)[0].end === undefined ? '#ef4444' : '#10b981')
-
-  const monitorNameElement = (
-    <Group gap="xs" style={{ display: 'inline-flex', alignItems: 'center' }}>
-      {monitor.statusPageLink ? (
-        <a
-          href={monitor.statusPageLink}
-          target="_blank"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            textDecoration: 'none',
-            color: 'inherit',
-            fontWeight: 600,
-            fontSize: '15px'
-          }}
-        >
-          {renderIcon()}
-          <span style={{ marginLeft: '4px' }}>{monitor.name}</span>
-        </a>
-      ) : (
-        <Group gap={4}>
-          {renderIcon()}
-          <Text fw={600} size="sm" c="#ffffff">
-            {monitor.name}
-          </Text>
-        </Group>
-      )}
-    </Group>
-  )
+  const statusText = hasMaintenance ? '维护中' : (isDown ? '已宕机' : '正常运行')
 
   return (
     <Box py="sm">
-      <Group justify="space-between" mb="xs">
-        {monitor.tooltip ? (
-          <Tooltip label={monitor.tooltip}>{monitorNameElement}</Tooltip>
-        ) : (
-          monitorNameElement
-        )}
-
-        <Group gap="md">
-          <Text size="xs" c="#8a91a5" fw={600}>
-            {uptimePercent}%
+      <Group justify="space-between" mb={12} align="flex-end">
+        <Group gap="xs" align="center">
+          <ThemeIcon variant="transparent" size={18} color={isDown ? '#ef4444' : '#10b981'}>
+            {isDown ? <IconAlertCircle size={18} /> : <IconCircleCheck size={18} />}
+          </ThemeIcon>
+          <Text size="15px" fw={500} c="#ffffff" style={{ lineHeight: '22.5px' }}>
+            {monitor.name}
+          </Text>
+        </Group>
+        <Group gap="sm" align="center">
+          <Text size="13px" fw={500} c="rgb(138, 145, 165)" style={{ lineHeight: '19.5px' }}>
+            {state.latency[monitor.id].length > 0 ? (
+              `${state.latency[monitor.id].slice(-1)[0].ping}ms`
+            ) : (
+              <></>
+            )}
+            {' '}{uptimePercent}% 的正常运行时间
           </Text>
           <Badge
             variant="filled"
-            bg="#2d313c"
+            bg={isDown ? 'rgba(239, 68, 68, 0.1)' : 'rgba(52, 211, 153, 0.1)'}
             style={{
-              color: '#ffffff',
+              color: isDown ? '#EF4444' : '#34D399',
               textTransform: 'none',
-              fontSize: '13px',
-              fontWeight: 500,
-              padding: '4px 8px',
-              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '2px 8px',
+              borderRadius: '9999px',
               height: 'auto'
             }}
           >
@@ -172,6 +132,3 @@ export default function MonitorDetail({
     </Box>
   )
 }
-
-import { Badge, Group, Box } from '@mantine/core'
-

@@ -88,7 +88,7 @@ export default function OverallStatus({
     }))
 
   return (
-    <Container size="md" mt={60} mb={60}>
+    <Container size="md" mt={60} mb={64}>
       <Stack align="center" gap="sm">
         <ThemeIcon
           size={48}
@@ -102,16 +102,17 @@ export default function OverallStatus({
         <Title
           style={{
             textAlign: 'center',
-            fontSize: '36px',
-            fontWeight: 800,
+            fontSize: '32px',
+            lineHeight: '35.2px',
+            fontWeight: 700,
             color: '#ffffff',
-            letterSpacing: '-0.02em'
+            letterSpacing: '-0.4px'
           }}
         >
           {statusString}
         </Title>
 
-        <Text c="#8a91a5" size="sm" mt={-5} style={{ textAlign: 'center', fontWeight: 500 }}>
+        <Text c="rgb(138, 145, 165)" size="sm" mt={-5} style={{ textAlign: 'center', fontWeight: 500 }}>
           {t('Last updated on', {
             date: new Date(state.lastUpdate * 1000).toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             seconds: currentTime - state.lastUpdate,

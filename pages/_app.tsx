@@ -15,11 +15,11 @@ export default function App({ Component, pageProps }: AppProps) {
           colors: {
             emerald: [
               '#ecfdf5', '#d1fae5', '#a7f3d0', '#6ee7b7', '#34d399',
-              '#10b981', '#059669', '#047857', '#065f46', '#064e3b'
+              '#10b981', '#10b981', '#047857', '#065f46', '#064e3b'
             ],
             dark: [
               '#d5d7e0', '#acaebf', '#8c8fa3', '#666980', '#4d4f66',
-              '#34354a', '#2b2c3d', '#111318', '#0d0f12', '#08090a'
+              '#34354a', '#21242d', '#12141a', '#0f121a', '#08090a'
             ]
           },
           primaryShade: 5,
@@ -27,18 +27,26 @@ export default function App({ Component, pageProps }: AppProps) {
           components: {
             Container: {
               defaultProps: {
-                size: 1000
+                size: 820 // vps.2x.nz uses a tighter 820px container
               }
             },
             Card: {
               defaultProps: {
-                bg: 'dark.7',
+                bg: 'rgb(18, 20, 26)',
                 withBorder: true,
               },
               styles: {
                 root: {
-                  borderColor: '#21242d',
-                  borderRadius: '12px'
+                  borderColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '8px'
+                }
+              }
+            },
+            Title: {
+              styles: {
+                root: {
+                  letterSpacing: '-0.4px',
+                  fontWeight: 700
                 }
               }
             }
@@ -47,8 +55,12 @@ export default function App({ Component, pageProps }: AppProps) {
       >
         <style jsx global>{`
           body {
-            background-color: #0d0f12 !important;
+            background-color: rgb(15, 18, 26) !important;
             color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          }
+          * {
+            transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
           }
         `}</style>
         <TimeAutoSwitch />

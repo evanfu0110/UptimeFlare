@@ -1,5 +1,5 @@
 import { MonitorState, MonitorTarget } from '@/types/config'
-import { Card, Container, Text, Badge, Group, Stack, ThemeIcon, Box } from '@mantine/core'
+import { Container, Text, Badge, Group, Stack, ThemeIcon, Box } from '@mantine/core'
 import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
@@ -9,7 +9,8 @@ interface IncidentEvent {
     type: 'down' | 'up'
     monitorName: string
     message: string
-    incidentId: string // To link down/up events
+    incidentId: string
+    monitorId: string
 }
 
 function translateError(msg: string): string {
@@ -34,236 +35,135 @@ export default function PastIncidents({
 }) {
     const { t } = useTranslation('common')
 
-    const events: IncidentEvent[] = []
-
-    // Ensure monitors and state exist
     if (!monitors || !state || !state.incident) return null
 
-    // Iterate over all monitors to collect events
-    monitors.forEach((monitor) => {
-        const monitorIncidents = state.incident[monitor.id]
-        if (!monitorIncidents || monitorIncidents.length === 0) return
-
-        monitorIncidents.forEach((incident, incIdx) => {
+    const allEvents: IncidentEvent[] = []
+    monitors.forEach(monitor => {
+        const monitorIncidents = state.incident[monitor.id] || []
+        monitorIncidents.forEach(incident => {
             const incidentId = `${monitor.id}-${incident.start[0]}`
-            // Add error events (the moments it went down or state changed)
-            if (incident.error && incident.error.length > 0) {
-                incident.error.forEach((errorMsg, errIdx) => {
-                    const time = incident.start[errIdx]
-                    if (time) {
-                        events.push({
-                            id: `${monitor.id}-${time}-down-${incIdx}-${errIdx}`,
-                            time: time,
-                            type: 'down',
-                            monitorName: monitor.name,
-                            message: translateError(errorMsg) || t('Service unavailable'),
-                            incidentId: incidentId,
-                        })
-                    }
+            incident.error.forEach((errorMsg, idx) => {
+                const startTime = incident.start[idx]
+                allEvents.push({
+                    id: `${monitor.id}-${startTime}-down`,
+                    time: startTime,
+                    type: 'down',
+                    monitorName: monitor.name,
+                    message: translateError(errorMsg),
+                    incidentId,
+                    monitorId: monitor.id
                 })
-            }
-
-            // Add recovery event if it exists
+            })
             if (incident.end) {
-                events.push({
-                    id: `${monitor.id}-${incident.end}-up-${incIdx}`,
+                allEvents.push({
+                    id: `${monitor.id}-${incident.end}-up`,
                     time: incident.end,
                     type: 'up',
                     monitorName: monitor.name,
-                    message: t('Service restored'),
-                    incidentId: incidentId,
+                    message: '服务已恢复正常',
+                    incidentId,
+                    monitorId: monitor.id
                 })
             }
         })
     })
 
-    // Sort events by time descending
-    events.sort((a, b) => b.time - a.time)
+    allEvents.sort((a, b) => b.time - a.time)
 
-    // Show recent 30 for cleaner UI
-    const displayEvents = events.slice(0, 30)
-
-    // Group by date
-    const groupedEvents: { [key: string]: IncidentEvent[] } = {}
-    displayEvents.forEach((event) => {
-        const date = new Date(event.time * 1000).toLocaleDateString('zh-CN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        })
-        if (!groupedEvents[date]) {
-            groupedEvents[date] = []
-        }
-        groupedEvents[date].push(event)
+    // Group by IncidentId to find latest per incident
+    const incidentGroups: { [key: string]: IncidentEvent[] } = {}
+    allEvents.slice(0, 50).forEach(event => {
+        if (!incidentGroups[event.incidentId]) incidentGroups[event.incidentId] = []
+        incidentGroups[event.incidentId].push(event)
     })
 
-    const dates = Object.keys(groupedEvents)
+    // Group by Date for display
+    const dateGroups: { dateLabel: string; incidents: { latest: IncidentEvent; count: number }[] }[] = []
+
+    Object.values(incidentGroups).forEach(events => {
+        const latest = events[0]
+        const d = new Date(latest.time * 1000)
+        const dateLabel = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
+
+        let dateGroup = dateGroups.find(dg => dg.dateLabel === dateLabel)
+        if (!dateGroup) {
+            dateGroup = { dateLabel, incidents: [] }
+            dateGroups.push(dateGroup)
+        }
+        dateGroup.incidents.push({ latest, count: events.length })
+    })
+
+    // Sort dates desc
+    dateGroups.sort((a, b) => {
+        const parse = (s: string) => {
+            const m = s.match(/(\d+)年(\d+)月(\d+)日/);
+            return m ? new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3])).getTime() : 0;
+        };
+        return parse(b.dateLabel) - parse(a.dateLabel);
+    });
 
     return (
-        <Container size="md" mt="xl" mb="xl">
-            <TitleSection title={t('Recent Events')} />
+        <Container size="md" mt={48} mb={80}>
+            <Text fw={700} ta="center" size="32px" mb={48} style={{ letterSpacing: '-0.4px' }}>以前的事件</Text>
 
-            {dates.length === 0 ? (
-                <Card padding="xl" radius="lg" shadow="sm" withBorder style={{ maxWidth: '865px', margin: '0 auto', textAlign: 'center' }}>
-                    <Text c="dimmed">{t('No recent events')}</Text>
-                </Card>
+            {dateGroups.length === 0 ? (
+                <Box bg="rgb(18, 20, 26)" p={40} style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
+                    <Group justify="center" gap="xs" style={{ color: 'rgb(138, 145, 165)' }}>
+                        <IconCircleCheck size={18} />
+                        <Text size="15px" fw={500}>没有报告事件</Text>
+                    </Group>
+                </Box>
             ) : (
-                <Stack gap="xl" style={{ maxWidth: '865px', margin: '0 auto' }}>
-                    {dates.map((date) => (
-                        <Box key={date}>
-                            <Text size="sm" c="dimmed" mb="sm" ml="md" fw={700}>
-                                {date}
-                            </Text>
-                            <div style={{ position: 'relative' }}>
-                                <Stack gap="xs">
-                                    {groupedEvents[date].map((event, idx) => {
-                                        const hasUp = event.type === 'down' && groupedEvents[date].some(e => e.type === 'up' && e.incidentId === event.incidentId);
-                                        const isLinkedToNext = idx > 0 && groupedEvents[date][idx - 1].incidentId === event.incidentId;
+                <Stack gap={40}>
+                    {dateGroups.map((group, gIdx) => (
+                        <Box key={gIdx}>
+                            <Text size="13px" fw={500} c="rgb(138, 145, 165)" mb={16}>{group.dateLabel}</Text>
+                            <Stack gap={16}>
+                                {group.incidents.map((incident, iIdx) => (
+                                    <Box key={iIdx} component="a" href={`/incident/${incident.latest.incidentId}`} style={{ textDecoration: 'none', display: 'block' }}>
+                                        <Group justify="space-between" mb={12}>
+                                            <Text fw={700} size="15px" c="#ffffff">{incident.latest.monitorName} detection failure</Text>
+                                            <Badge variant="filled" bg="rgba(239, 68, 68, 0.1)" c="#EF4444" radius="xl" size="sm" fw={700} style={{ textTransform: 'none' }}>停机</Badge>
+                                        </Group>
 
-                                        return (
-                                            <Box key={event.id} style={{ position: 'relative', marginBottom: '16px' }}>
-                                                {/* Stack background layers (only for the last card of a group or for individual cards to look "stacked") */}
-                                                {/* Actually, vps.2x.nz does it for the whole section if it's a "stack" */}
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    bottom: '-4px',
-                                                    left: '4px',
-                                                    right: '4px',
-                                                    height: '10px',
-                                                    backgroundColor: '#111318',
-                                                    border: '1px solid #21242d',
-                                                    borderTop: 'none',
-                                                    borderRadius: '0 0 12px 12px',
-                                                    zIndex: 1,
-                                                    opacity: 0.6
-                                                }} />
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    bottom: '-8px',
-                                                    left: '8px',
-                                                    right: '8px',
-                                                    height: '10px',
-                                                    backgroundColor: '#111318',
-                                                    border: '1px solid #21242d',
-                                                    borderTop: 'none',
-                                                    borderRadius: '0 0 12px 12px',
-                                                    zIndex: 0,
-                                                    opacity: 0.3
-                                                }} />
+                                        <Box style={{ position: 'relative' }}>
+                                            {incident.count > 1 && (
+                                                <>
+                                                    <div style={{ position: 'absolute', bottom: '-4px', left: '4px', right: '4px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 8px 8px', zIndex: 0 }} />
+                                                    <div style={{ position: 'absolute', bottom: '-8px', left: '8px', right: '8px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 8px 8px', zIndex: -1 }} />
+                                                </>
+                                            )}
 
-                                                <Card
-                                                    component="a"
-                                                    href={`/incident/${event.incidentId}`}
-                                                    padding="md"
-                                                    radius="md"
-                                                    withBorder
-                                                    shadow="xs"
-                                                    style={{
-                                                        backgroundColor: '#111318',
-                                                        borderColor: '#21242d',
-                                                        position: 'relative',
-                                                        zIndex: 2,
-                                                        textDecoration: 'none',
-                                                        display: 'block'
-                                                    }}
-                                                >
-                                                    <Group justify="space-between">
-                                                        <Group gap="sm">
-                                                            <div style={{ position: 'relative' }}>
-                                                                <ThemeIcon
-                                                                    color={event.type === 'down' ? '#ef4444' : '#10b981'}
-                                                                    variant="light"
-                                                                    bg={event.type === 'down' ? '#ef444420' : '#10b98120'}
-                                                                    radius="xl"
-                                                                    style={{ position: 'relative', zIndex: 10 }}
-                                                                >
-                                                                    {event.type === 'down' ? <IconAlertCircle size={16} /> : <IconCircleCheck size={16} />}
-                                                                </ThemeIcon>
-
-                                                                {/* Connectivity Line */}
-                                                                {((event.type === 'down' && hasUp) || (event.type === 'up' && isLinkedToNext)) && (
-                                                                    <div style={{
-                                                                        position: 'absolute',
-                                                                        top: event.type === 'down' ? '100%' : '-100%',
-                                                                        left: '50%',
-                                                                        width: '2px',
-                                                                        height: '40px',
-                                                                        backgroundColor: '#21242d',
-                                                                        transform: 'translateX(-50%)',
-                                                                        zIndex: 5
-                                                                    }} />
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                <Text fw={600} size="sm" c="#ffffff">
-                                                                    {event.monitorName} {event.type === 'down' ? '检测到故障' : '服务已恢复正常'}
-                                                                </Text>
-                                                                <Text size="xs" c="#8a91a5">
-                                                                    {event.message}
-                                                                </Text>
-                                                            </div>
-                                                        </Group>
-                                                        <Badge
-                                                            variant="dot"
-                                                            color={event.type === 'down' ? '#ef4444' : '#10b981'}
-                                                            size="sm"
-                                                            style={{ color: '#8a91a5' }}
-                                                        >
-                                                            {new Date(event.time * 1000).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
-                                                        </Badge>
-                                                    </Group>
-                                                </Card>
+                                            <Box p="md" bg="rgba(255, 255, 255, 0.03)" style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', position: 'relative', zIndex: 1 }}>
+                                                <Group gap="sm" align="flex-start" wrap="nowrap">
+                                                    <ThemeIcon size={18} variant="transparent" color={incident.latest.type === 'up' ? '#10b981' : '#ef4444'} mt={2}>
+                                                        {incident.latest.type === 'up' ? <IconCircleCheck size={18} /> : <IconAlertCircle size={18} />}
+                                                    </ThemeIcon>
+                                                    <Stack gap={2}>
+                                                        <Text size="13px" fw={600} c="#ffffff">{incident.latest.type === 'up' ? '已解决' : '检测到故障'} {new Date(incident.latest.time * 1000).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} UTC+8</Text>
+                                                        <Text size="13px" c="rgb(138, 145, 165)">{incident.latest.message}</Text>
+                                                    </Stack>
+                                                </Group>
                                             </Box>
-                                        );
-                                    })}
-                                </Stack>
-                                {dates.length > 0 && (
-                                    <Center mt="xl">
-                                        <Text
-                                            component="a"
-                                            href="/incidents"
-                                            size="sm"
-                                            c="#8a91a5"
-                                            style={{
-                                                cursor: 'pointer',
-                                                textDecoration: 'none',
-                                                '&:hover': {
-                                                    textDecoration: 'underline'
-                                                }
-                                            }}
-                                        >
-                                            以前的更新
-                                        </Text>
-                                    </Center>
-                                )}
-                            </div>
+
+                                            {incident.count > 1 && (
+                                                <Group gap="sm" mt={16} ml={2}>
+                                                    <Box style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px dotted rgb(138, 145, 165)' }} />
+                                                    <Text size="13px" fw={500} c="rgb(138, 145, 165)">多于之前的 {incident.count - 1} 次更新</Text>
+                                                </Group>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                ))}
+                            </Stack>
                         </Box>
                     ))}
+
+                    <Box component="a" href="/incidents" style={{ textAlign: 'center', marginTop: '16px', textDecoration: 'none' }}>
+                        <Text size="13px" fw={500} c="rgb(138, 145, 165)">以前的事件</Text>
+                    </Box>
                 </Stack>
             )}
         </Container>
     )
 }
-
-function TitleSection({ title }: { title: string }) {
-    return (
-        <Box mb="lg">
-            <Text size="xl" fw={700} ta="center">
-                {title}
-            </Text>
-            <Center>
-                <Box
-                    style={{
-                        height: '3px',
-                        width: '40px',
-                        backgroundColor: 'var(--mantine-color-teal-6)',
-                        borderRadius: '2px',
-                        marginTop: '4px'
-                    }}
-                />
-            </Center>
-        </Box>
-    )
-}
-
-import { Title as MantineTitle, Center } from '@mantine/core'

@@ -1,0 +1,6 @@
+.bar {
+    &:hover {
+        transform: scaleY(1.05);
+        opacity: 0.9;
+    }
+}

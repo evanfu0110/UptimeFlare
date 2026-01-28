@@ -61,8 +61,8 @@ export default function Header({ style }: { style?: CSSProperties }) {
                 fit="contain"
                 alt="logo"
               />
-              <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: '#ffffff' }}>
-                AcoFork 状态
+              <span style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.4px', color: '#EEF1F2' }}>
+                Cola Monitor
               </span>
             </Group>
           </Link>
