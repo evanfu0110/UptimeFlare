@@ -119,7 +119,7 @@ export default function MonitorList({
       <Card
         shadow="sm"
         padding="lg"
-        radius="md"
+        radius="lg"
         ml="md"
         mr="md"
         mt="xl"

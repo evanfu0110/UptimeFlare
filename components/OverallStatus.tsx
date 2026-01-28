@@ -1,6 +1,6 @@
 import { MaintenanceConfig, MonitorTarget } from '@/types/config'
-import { Center, Container, Title, Collapse, Button, Box } from '@mantine/core'
-import { IconCircleCheck, IconAlertCircle, IconPlus, IconMinus } from '@tabler/icons-react'
+import { Center, Container, Title, Collapse, Text, Card, ThemeIcon } from '@mantine/core'
+import { IconCircleCheck, IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import MaintenanceAlert from './MaintenanceAlert'
 import { pageConfig } from '@/uptime.config'
@@ -30,19 +30,24 @@ export default function OverallStatus({
   let groupedMonitor = (group && Object.keys(group).length > 0) || false
 
   let statusString = ''
-  let icon = <IconAlertCircle style={{ width: 64, height: 64, color: '#b91c1c' }} />
+  let statusColor = 'gray'
+  let icon = <IconAlertCircle style={{ width: 48, height: 48 }} />
+
   if (state.overallUp === 0 && state.overallDown === 0) {
     statusString = t('No data yet')
   } else if (state.overallUp === 0) {
     statusString = t('All systems not operational')
+    statusColor = 'red'
   } else if (state.overallDown === 0) {
     statusString = t('All systems operational')
-    icon = <IconCircleCheck style={{ width: 64, height: 64, color: '#059669' }} />
+    statusColor = 'teal'
+    icon = <IconCircleCheck style={{ width: 48, height: 48 }} />
   } else {
     statusString = t('Some systems not operational', {
       down: state.overallDown,
       total: state.overallUp + state.overallDown,
     })
+    statusColor = 'orange'
   }
 
   const [openTime] = useState(Math.round(Date.now() / 1000))
@@ -86,21 +91,39 @@ export default function OverallStatus({
     }))
 
   return (
-    <Container size="md" mt="xl">
-      <Center>{icon}</Center>
-      <Title mt="sm" style={{ textAlign: 'center' }} order={1}>
-        {statusString}
-      </Title>
-      <Title mt="sm" style={{ textAlign: 'center', color: '#70778c' }} order={5}>
-        {t('Last updated on', {
-          date: new Date(state.lastUpdate * 1000).toLocaleString(),
-          seconds: currentTime - state.lastUpdate,
-        })}
-      </Title>
+    <Container size="md" mt="xl" mb="xl">
+      <Card
+        padding="xl"
+        radius="lg"
+        shadow="sm"
+        withBorder
+        bg={statusColor === 'teal' ? 'rgba(5, 150, 105, 0.05)' : undefined}
+        style={{ maxWidth: groupedMonitor ? '897px' : '865px', margin: '0 auto' }}
+      >
+        <Center>
+          <ThemeIcon
+            size={80}
+            radius="100%"
+            color={statusColor}
+            variant="light"
+          >
+            {icon}
+          </ThemeIcon>
+        </Center>
+        <Title mt="md" style={{ textAlign: 'center' }} order={2}>
+          {statusString}
+        </Title>
+        <Text c="dimmed" size="sm" mt="xs" style={{ textAlign: 'center' }}>
+          {t('Last updated on', {
+            date: new Date(state.lastUpdate * 1000).toLocaleString(),
+            seconds: currentTime - state.lastUpdate,
+          })}
+        </Text>
+      </Card>
 
       {/* Upcoming Maintenance */}
       {upcomingMaintenances.length > 0 && (
-        <>
+        <div style={{ maxWidth: groupedMonitor ? '897px' : '865px', margin: '20px auto 0' }}>
           <Title mt="4px" style={{ textAlign: 'center', color: '#70778c' }} order={5}>
             {t('upcoming maintenance', { count: upcomingMaintenances.length })}{' '}
             <span
@@ -116,22 +139,24 @@ export default function OverallStatus({
               <MaintenanceAlert
                 key={`upcoming-${idx}`}
                 maintenance={maintenance}
-                style={{ maxWidth: groupedMonitor ? '897px' : '865px' }}
                 upcoming
               />
             ))}
           </Collapse>
-        </>
+        </div>
       )}
 
       {/* Active Maintenance */}
-      {activeMaintenances.map((maintenance, idx) => (
-        <MaintenanceAlert
-          key={`active-${idx}`}
-          maintenance={maintenance}
-          style={{ maxWidth: groupedMonitor ? '897px' : '865px' }}
-        />
-      ))}
+      {activeMaintenances.length > 0 && (
+        <div style={{ maxWidth: groupedMonitor ? '897px' : '865px', margin: '20px auto 0' }}>
+          {activeMaintenances.map((maintenance, idx) => (
+            <MaintenanceAlert
+              key={`active-${idx}`}
+              maintenance={maintenance}
+            />
+          ))}
+        </div>
+      )}
     </Container>
   )
 }

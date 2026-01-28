@@ -8,7 +8,13 @@ import '@/util/i18n'
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <NoSsr>
-      <MantineProvider defaultColorScheme="auto">
+      <MantineProvider
+        defaultColorScheme="auto"
+        theme={{
+          primaryColor: 'teal',
+          defaultRadius: 'lg',
+        }}
+      >
         <TimeAutoSwitch />
         <Component {...pageProps} />
       </MantineProvider>
