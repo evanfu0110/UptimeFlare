@@ -179,7 +179,7 @@ function UptimeBar({
           flex: 1,
           background: isNoData
             ? 'rgba(255, 255, 255, 0.05)'
-            : (dayPercent === '100.0' ? '#10b981' : (Number(dayPercent) > 95 ? '#34d399' : '#ef4444')),
+            : (dayDownTime === 0 ? '#10b981' : (Number(dayPercent) > 95 ? '#f59e0b' : '#ef4444')),
           borderRadius: '2px', // vps.2x.nz rounding for every bar
           transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
           cursor: isNoData ? 'default' : (dayDownTime > 0 ? 'pointer' : 'default'),

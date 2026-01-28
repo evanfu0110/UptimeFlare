@@ -76,9 +76,18 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
 
                     {/* Incident Header */}
                     <Box mb={40}>
-                        <Title order={1} size="32px" c="#ffffff" fw={700} mb={16} style={{ letterSpacing: '-0.4px' }}>
-                            {activeMonitor.name} detection failure
-                        </Title>
+                        <Group gap="xs" mb={12} align="center">
+                            {activeMonitor.icon && (
+                                <img
+                                    src={activeMonitor.icon}
+                                    style={{ width: '24px', height: '24px', borderRadius: '4px' }}
+                                    alt=""
+                                />
+                            )}
+                            <Title order={1} size="32px" c="#ffffff" fw={700} style={{ letterSpacing: '-0.4px' }}>
+                                {activeMonitor.name} 检测到故障
+                            </Title>
+                        </Group>
                         <Group gap="sm" mb={24}>
                             <Badge
                                 variant="filled"
@@ -95,6 +104,11 @@ export default function IncidentDetailPage({ compactedStateStr, monitors }: { co
                             >
                                 {statusLabel}
                             </Badge>
+                            {isResolved && (
+                                <Text size="13px" c="rgb(138, 145, 165)" fw={500}>
+                                    持续时间: {Math.floor((activeIncident.end - activeIncident.start[0]) / 60)} 分钟
+                                </Text>
+                            )}
                         </Group>
 
                         {/* Affected Services Bar */}

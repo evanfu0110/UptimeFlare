@@ -1,0 +1,38 @@
+.accordionItem {
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background-color: rgb(22, 24, 30) !important;
+    margin-bottom: 20px !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.accordionControl {
+    padding: 18px 24px !important;
+}
+
+.accordionControl:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.accordionChevron {
+    color: #ffffff !important;
+    opacity: 0.8 !important;
+}
+
+.accordionPanel {
+    padding: 4px 16px 16px 16px !important;
+    background-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+.childCard {
+    background-color: rgb(28, 30, 38);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+    padding: 16px;
+}
+
+.childCard:hover {
+    background-color: rgb(32, 34, 42);
+}

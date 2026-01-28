@@ -1,0 +1,27 @@
+.selectInput {
+    background-color: rgb(22, 24, 30) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+.selectDropdown {
+    background-color: rgb(22, 24, 30) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.selectOption {
+    color: #ffffff !important;
+}
+
+.selectOption:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.selectOption[data-selected] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.selectSection {
+    color: #ffffff !important;
+    opacity: 0.8 !important;
+}

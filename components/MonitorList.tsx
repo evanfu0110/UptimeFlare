@@ -1,9 +1,10 @@
 import { MonitorState, MonitorTarget } from '@/types/config'
-import { Accordion, Card, Center, Text } from '@mantine/core'
+import { Accordion, Card, Center, Text, Group, Badge, Stack, Box } from '@mantine/core'
 import MonitorDetail from './MonitorDetail'
 import { pageConfig } from '@/uptime.config'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import classes from '@/styles/MonitorList.module.css'
 
 function countDownCount(state: MonitorState, ids: string[]) {
   let downCount = 0
@@ -22,11 +23,11 @@ function countDownCount(state: MonitorState, ids: string[]) {
 function getStatusTextColor(state: MonitorState, ids: string[]) {
   let downCount = countDownCount(state, ids)
   if (downCount === 0) {
-    return '#059669'
+    return '#10b981'
   } else if (downCount === ids.length) {
-    return '#df484a'
+    return '#ef4444'
   } else {
-    return '#f29030'
+    return '#f59e0b'
   }
 }
 
@@ -43,11 +44,17 @@ export default function MonitorList({
   let content
 
   // Load expanded groups from localStorage
-  const savedExpandedGroups = localStorage.getItem('expandedGroups')
-  const expandedInitial = savedExpandedGroups
-    ? JSON.parse(savedExpandedGroups)
-    : Object.keys(group || {})
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(expandedInitial)
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(Object.keys(group || {}))
+
+  useEffect(() => {
+    const saved = localStorage.getItem('expandedGroups')
+    if (saved) {
+      try {
+        setExpandedGroups(JSON.parse(saved))
+      } catch (e) { }
+    }
+  }, [])
+
   useEffect(() => {
     localStorage.setItem('expandedGroups', JSON.stringify(expandedGroups))
   }, [expandedGroups])
@@ -61,30 +68,27 @@ export default function MonitorList({
         variant="separated"
         value={expandedGroups}
         onChange={(values) => setExpandedGroups(values)}
-        styles={{
-          item: {
-            border: '1px solid #21242d',
-            backgroundColor: '#111318',
-            marginBottom: '16px',
-            borderRadius: '12px',
-            overflow: 'hidden'
-          },
-          control: {
-            padding: '16px 20px',
-          },
-          panel: { padding: '0 20px 10px 20px' },
-          content: { padding: 0 }
+        classNames={{
+          item: classes.accordionItem,
+          control: classes.accordionControl,
+          chevron: classes.accordionChevron,
+          panel: classes.accordionPanel,
         }}
       >
         {Object.keys(group).map((groupName) => (
           <Accordion.Item key={groupName} value={groupName}>
             <Accordion.Control>
               <Group justify="space-between" style={{ width: '100%' }}>
-                <Text fw={700} size="md" c="#ffffff">{groupName}</Text>
+                <Text fw={700} size="16px" c="#ffffff" style={{ letterSpacing: '-0.2px' }}>{groupName}</Text>
                 <Badge
-                  variant="light"
-                  bg={`${getStatusTextColor(state, group[groupName])}15`}
-                  style={{ color: getStatusTextColor(state, group[groupName]), textTransform: 'none' }}
+                  variant="filled"
+                  bg={`${getStatusTextColor(state, group[groupName])}25`}
+                  style={{
+                    color: getStatusTextColor(state, group[groupName]),
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: '8px'
+                  }}
                   size="sm"
                 >
                   {group[groupName].length - countDownCount(state, group[groupName])}/
@@ -93,17 +97,12 @@ export default function MonitorList({
               </Group>
             </Accordion.Control>
             <Accordion.Panel>
-              <Stack gap={0}>
+              <Stack gap={12}>
                 {monitors
                   .filter((monitor) => group[groupName].includes(monitor.id))
                   .sort((a, b) => group[groupName].indexOf(a.id) - group[groupName].indexOf(b.id))
-                  .map((monitor, idx, arr) => (
-                    <Box
-                      key={monitor.id}
-                      style={{
-                        borderBottom: idx === arr.length - 1 ? 'none' : '1px solid #21242d'
-                      }}
-                    >
+                  .map((monitor) => (
+                    <Box key={monitor.id} className={classes.childCard}>
                       <MonitorDetail monitor={monitor} state={state} />
                     </Box>
                   ))}
@@ -118,11 +117,9 @@ export default function MonitorList({
     content = (
       <Stack gap="md">
         {monitors.map((monitor) => (
-          <Card key={monitor.id} withBorder radius="md" padding="0" shadow="none">
-            <Box px="md">
-              <MonitorDetail monitor={monitor} state={state} />
-            </Box>
-          </Card>
+          <Box key={monitor.id} className={classes.childCard} style={{ backgroundColor: 'rgb(22, 24, 30)', borderRadius: '16px' }}>
+            <MonitorDetail monitor={monitor} state={state} />
+          </Box>
         ))}
       </Stack>
     )
@@ -143,6 +140,3 @@ export default function MonitorList({
     </Center>
   )
 }
-
-import { Box, Stack, Group, Badge } from '@mantine/core'
-

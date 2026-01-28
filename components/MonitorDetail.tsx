@@ -52,7 +52,7 @@ export default function MonitorDetail({
 
   if (!state.latency[monitor.id])
     return (
-      <Box py="sm">
+      <Box>
         <Group gap="xs" align="center">
           {renderIcon()}
           <Text size="15px" fw={500} c="#ffffff" style={{ lineHeight: '22.5px' }}>
@@ -85,12 +85,13 @@ export default function MonitorDetail({
   const statusText = hasMaintenance ? '维护中' : (isDown ? '已宕机' : '正常运行')
 
   return (
-    <Box py="sm">
+    <Box>
       <Group justify="space-between" mb={12} align="flex-end">
         <Group gap="xs" align="center">
           <ThemeIcon variant="transparent" size={18} color={isDown ? '#ef4444' : '#10b981'}>
             {isDown ? <IconAlertCircle size={18} /> : <IconCircleCheck size={18} />}
           </ThemeIcon>
+          {renderIcon('0')}
           <Text size="15px" fw={500} c="#ffffff" style={{ lineHeight: '22.5px' }}>
             {monitor.name}
           </Text>

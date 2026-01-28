@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CompactedMonitorStateWrapper, getFromStore } from '@/worker/src/store'
 import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react'
+import classes from '@/styles/Incidents.module.css'
 
 export const runtime = 'experimental-edge'
 const inter = Inter({ subsets: ['latin'] })
@@ -177,6 +178,12 @@ export default function IncidentsPage({ compactedStateStr, monitors }: { compact
               onChange={setSelectedMonitor}
               radius="md"
               style={{ width: 240 }}
+              classNames={{
+                input: classes.selectInput,
+                dropdown: classes.selectDropdown,
+                option: classes.selectOption,
+                section: classes.selectSection,
+              }}
             />
           </Group>
 
@@ -211,9 +218,18 @@ export default function IncidentsPage({ compactedStateStr, monitors }: { compact
 
                               <Box p="md" bg="rgb(22, 24, 30)" style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 1 }}>
                                 <Group justify="space-between" mb={14}>
-                                  <Text fw={700} size="15px" c="#ffffff">
-                                    {incident.monitors.length > 1 ? `${incident.monitors.length} 个服务检测到异常` : `${incident.monitors[0].name} detection failure`}
-                                  </Text>
+                                  <Group gap="xs">
+                                    {monitors.find(m => m.id === incident.monitors[0].id)?.icon && (
+                                      <img
+                                        src={monitors.find(m => m.id === incident.monitors[0].id)?.icon}
+                                        style={{ width: '18px', height: '18px', borderRadius: '4px' }}
+                                        alt=""
+                                      />
+                                    )}
+                                    <Text fw={700} size="15px" c="#ffffff">
+                                      {incident.monitors.length > 1 ? `${incident.monitors.length} 个服务检测到异常` : `${incident.monitors[0].name} 检测到故障`}
+                                    </Text>
+                                  </Group>
                                   <Badge variant="filled" bg="rgba(239, 68, 68, 0.1)" c="#EF4444" radius="xl" size="sm" fw={700} style={{ textTransform: 'none' }}>停机</Badge>
                                 </Group>
 

@@ -150,16 +150,25 @@ export default function PastIncidents({
                                             {/* Stacking effect based on max history updates among aggregated services */}
                                             {incident.maxUpdates > 1 && (
                                                 <>
-                                                    <div style={{ position: 'absolute', bottom: '-4px', left: '6px', right: '6px', height: '10px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 8px 8px', zIndex: 0 }} />
-                                                    <div style={{ position: 'absolute', bottom: '-8px', left: '12px', right: '12px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 8px 8px', zIndex: -1 }} />
+                                                    <div style={{ position: 'absolute', bottom: '-4px', left: '8px', right: '8px', height: '10px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 16px 16px', zIndex: 0 }} />
+                                                    <div style={{ position: 'absolute', bottom: '-8px', left: '16px', right: '16px', height: '10px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '0 0 16px 16px', zIndex: -1 }} />
                                                 </>
                                             )}
 
-                                            <Box p="md" bg="rgb(22, 24, 30)" style={{ borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 1 }}>
+                                            <Box p="md" bg="rgb(22, 24, 30)" style={{ borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 1 }}>
                                                 <Group justify="space-between" mb={14}>
-                                                    <Text fw={700} size="15px" c="#ffffff">
-                                                        {incident.monitors.length > 1 ? `${incident.monitors.length} 个服务检测到异常` : `${incident.monitors[0].name} detection failure`}
-                                                    </Text>
+                                                    <Group gap="xs">
+                                                        {monitors.find(m => m.id === incident.monitors[0].id)?.icon && (
+                                                            <img
+                                                                src={monitors.find(m => m.id === incident.monitors[0].id)?.icon}
+                                                                style={{ width: '18px', height: '18px', borderRadius: '4px' }}
+                                                                alt=""
+                                                            />
+                                                        )}
+                                                        <Text fw={700} size="15px" c="#ffffff">
+                                                            {incident.monitors.length > 1 ? `${incident.monitors.length} 个服务检测到异常` : `${incident.monitors[0].name} 检测到故障`}
+                                                        </Text>
+                                                    </Group>
                                                     <Badge variant="filled" bg="rgba(239, 68, 68, 0.1)" c="#EF4444" radius="xl" size="sm" fw={700} style={{ textTransform: 'none' }}>停机</Badge>
                                                 </Group>
 
