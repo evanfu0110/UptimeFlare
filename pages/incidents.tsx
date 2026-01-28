@@ -186,8 +186,8 @@ export default function IncidentsPage({ compactedStateStr, monitors }: IncidentP
 
             <Stack gap="xs">
               {monitorFilteredEvents.length === 0 ? (
-                <Card padding="xl" radius="lg" shadow="sm" withBorder style={{ textAlign: 'center' }}>
-                  <Text c="dimmed">{t('No data available')}</Text>
+                <Card padding="xl" radius="lg" shadow="sm" withBorder style={{ backgroundColor: '#111318', borderColor: '#21242d', textAlign: 'center' }}>
+                  <Text c="#8a91a5">{t('No data available')}</Text>
                 </Card>
               ) : (
                 monitorFilteredEvents.map((event, idx) => {
@@ -195,62 +195,94 @@ export default function IncidentsPage({ compactedStateStr, monitors }: IncidentP
                   const isLinkedToNext = idx > 0 && monitorFilteredEvents[idx - 1].incidentId === event.incidentId;
 
                   return (
-                    <Card
-                      key={event.id}
-                      padding="md"
-                      radius="md"
-                      withBorder
-                      shadow="xs"
-                      style={{
-                        zIndex: 100 - idx,
-                        transform: `scale(${1 - (idx * 0.002)})`,
-                      }}
-                    >
-                      <Group justify="space-between">
-                        <Group gap="sm">
-                          <div style={{ position: 'relative' }}>
-                            <ThemeIcon
-                              color={event.type === 'downtime' ? 'red' : 'teal'}
-                              variant="light"
-                              radius="xl"
-                              style={{ position: 'relative', zIndex: 2 }}
-                            >
-                              {event.type === 'downtime' ? <IconAlertCircle size={16} /> : <IconCircleCheck size={16} />}
-                            </ThemeIcon>
-                            {((event.type === 'downtime' && hasUp) || (event.type === 'restored' && isLinkedToNext)) && (
-                              <div style={{
-                                position: 'absolute',
-                                top: event.type === 'downtime' ? '100%' : '-100%',
-                                left: '50%',
-                                width: '2px',
-                                height: '40px',
-                                backgroundColor: event.type === 'downtime' ? 'var(--mantine-color-red-2)' : 'var(--mantine-color-teal-2)',
-                                transform: 'translateX(-50%)',
-                                zIndex: 1
-                              }} />
-                            )}
-                          </div>
-                          <div>
-                            <Text fw={600} size="sm">
-                              {event.monitorName} {event.type === 'downtime' ? '检测到故障' : '服务已恢复正常'}
-                            </Text>
-                            {event.message && (
-                              <Text size="xs" c="dimmed">
-                                {event.message}
+                    <Box key={event.id} style={{ position: 'relative', marginBottom: '16px' }}>
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '-4px',
+                        left: '4px',
+                        right: '4px',
+                        height: '10px',
+                        backgroundColor: '#111318',
+                        border: '1px solid #21242d',
+                        borderTop: 'none',
+                        borderRadius: '0 0 12px 12px',
+                        zIndex: 1,
+                        opacity: 0.6
+                      }} />
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '-8px',
+                        left: '8px',
+                        right: '8px',
+                        height: '10px',
+                        backgroundColor: '#111318',
+                        border: '1px solid #21242d',
+                        borderTop: 'none',
+                        borderRadius: '0 0 12px 12px',
+                        zIndex: 0,
+                        opacity: 0.3
+                      }} />
+
+                      <Card
+                        padding="md"
+                        radius="md"
+                        withBorder
+                        shadow="xs"
+                        style={{
+                          backgroundColor: '#111318',
+                          borderColor: '#21242d',
+                          position: 'relative',
+                          zIndex: 2,
+                        }}
+                      >
+                        <Group justify="space-between">
+                          <Group gap="sm">
+                            <div style={{ position: 'relative' }}>
+                              <ThemeIcon
+                                color={event.type === 'downtime' ? '#ef4444' : '#10b981'}
+                                variant="light"
+                                bg={event.type === 'downtime' ? '#ef444420' : '#10b98120'}
+                                radius="xl"
+                                style={{ position: 'relative', zIndex: 10 }}
+                              >
+                                {event.type === 'downtime' ? <IconAlertCircle size={16} /> : <IconCircleCheck size={16} />}
+                              </ThemeIcon>
+
+                              {((event.type === 'downtime' && hasUp) || (event.type === 'restored' && isLinkedToNext)) && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: event.type === 'downtime' ? '100%' : '-100%',
+                                  left: '50%',
+                                  width: '2px',
+                                  height: '40px',
+                                  backgroundColor: '#21242d',
+                                  transform: 'translateX(-50%)',
+                                  zIndex: 5
+                                }} />
+                              )}
+                            </div>
+                            <div>
+                              <Text fw={600} size="sm" c="#ffffff">
+                                {event.monitorName} {event.type === 'downtime' ? '检测到故障' : '服务已恢复正常'}
                               </Text>
-                            )}
-                          </div>
+                              {event.message && (
+                                <Text size="xs" c="#8a91a5">
+                                  {event.message}
+                                </Text>
+                              )}
+                            </div>
+                          </Group>
+                          <Text size="xs" c="#8a91a5" fw={500}>
+                            {new Date(event.time * 1000).toLocaleString('zh-CN', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </Text>
                         </Group>
-                        <Text size="xs" c="dimmed" fw={500}>
-                          {new Date(event.time * 1000).toLocaleString('zh-CN', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </Text>
-                      </Group>
-                    </Card>
+                      </Card>
+                    </Box>
                   )
                 })
               )}

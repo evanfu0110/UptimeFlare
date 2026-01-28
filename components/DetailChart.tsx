@@ -44,9 +44,11 @@ export default function DetailChart({
     datasets: [
       {
         data: latencyData,
-        borderColor: 'rgb(112, 119, 140)',
-        borderWidth: 2,
-        radius: 0,
+        borderColor: '#70778c',
+        backgroundColor: '#70778c',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
         cubicInterpolationMode: 'monotone' as const,
         tension: 0.4,
       },
@@ -65,6 +67,14 @@ export default function DetailChart({
     },
     plugins: {
       tooltip: {
+        backgroundColor: '#21242d',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#3f4355',
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 6,
+        displayColors: false,
         callbacks: {
           label: (item: any) => {
             if (item.parsed.y) {
@@ -78,19 +88,26 @@ export default function DetailChart({
       },
       title: {
         display: true,
-        text: t('Response times'),
+        text: '响应时间',
         align: 'start' as const,
+        color: '#8a91a5',
+        font: {
+          size: 13,
+          weight: 'normal'
+        },
+        padding: {
+          bottom: 10
+        }
       },
     },
     scales: {
       x: {
+        display: false, // Replicating minimal layout
         type: 'time' as const,
-        ticks: {
-          source: 'auto' as const,
-          maxRotation: 0,
-          autoSkip: true,
-        },
       },
+      y: {
+        display: false, // Replicating minimal layout
+      }
     },
   }
 

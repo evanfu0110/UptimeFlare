@@ -4,19 +4,24 @@ import { pageConfig } from '@/uptime.config'
 import { PageConfigLink } from '@/types/config'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { CSSProperties } from 'react'
 import { ThemeToggle } from './ThemeToggle'
 
 export default function Header({ style }: { style?: CSSProperties }) {
   const { t } = useTranslation('common')
+  const { pathname } = useRouter()
+
   const linkToElement = (link: PageConfigLink, i: number) => {
+    const isActive = pathname === link.link || (link.link !== '/' && pathname.startsWith(link.link))
+
     if (link.link.startsWith('/')) {
       return (
         <Link
           key={i}
           href={link.link}
           className={classes.link}
-          data-active={link.highlight}
+          data-active={isActive}
         >
           {link.label}
         </Link>
@@ -28,14 +33,17 @@ export default function Header({ style }: { style?: CSSProperties }) {
         href={link.link}
         target="_blank"
         className={classes.link}
-        data-active={link.highlight}
       >
         {link.label}
       </a>
     )
   }
 
-  const links = [{ label: t('Incidents'), link: '/incidents' }, ...(pageConfig.links || [])]
+  const links = [
+    { label: '状态', link: '/' },
+    { label: '事件', link: '/incidents' },
+    { label: '国内监测节点', link: 'https://vps.2x.nz/nodes' }, // Replicating reference link
+  ]
 
   return (
     <header className={classes.header} style={style}>
@@ -53,18 +61,20 @@ export default function Header({ style }: { style?: CSSProperties }) {
                 fit="contain"
                 alt="logo"
               />
-              <span style={{ fontSize: '20px', fontWeight: 600 }}>Cola Monitor</span>
+              <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: '#ffffff' }}>
+                AcoFork 状态
+              </span>
             </Group>
           </Link>
         </div>
 
         <Group>
           <Group gap={5} visibleFrom="sm">
-            {links?.map(linkToElement)}
+            {links.map(linkToElement)}
           </Group>
 
           <Group gap={5} hiddenFrom="sm">
-            {links?.filter((link) => link.highlight || link.link.startsWith('/')).map(linkToElement)}
+            {links.filter((link) => link.link.startsWith('/')).map(linkToElement)}
           </Group>
 
           <ThemeToggle />

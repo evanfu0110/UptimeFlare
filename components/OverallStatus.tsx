@@ -1,5 +1,5 @@
 import { MaintenanceConfig, MonitorTarget } from '@/types/config'
-import { Center, Container, Title, Collapse, Text, Card, ThemeIcon } from '@mantine/core'
+import { Center, Container, Title, Collapse, Text, Card, ThemeIcon, Stack } from '@mantine/core'
 import { IconCircleCheck, IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import MaintenanceAlert from './MaintenanceAlert'
@@ -36,17 +36,14 @@ export default function OverallStatus({
   if (state.overallUp === 0 && state.overallDown === 0) {
     statusString = t('No data yet')
   } else if (state.overallUp === 0) {
-    statusString = t('All systems not operational')
+    statusString = '所有系统目前都处于停机状态'
     statusColor = 'red'
   } else if (state.overallDown === 0) {
-    statusString = t('All systems operational')
+    statusString = '所有系统都在正常运行'
     statusColor = 'teal'
     icon = <IconCircleCheck style={{ width: 48, height: 48 }} />
   } else {
-    statusString = t('Some systems not operational', {
-      down: state.overallDown,
-      total: state.overallUp + state.overallDown,
-    })
+    statusString = '部分系统目前出现故障'
     statusColor = 'orange'
   }
 
@@ -91,35 +88,39 @@ export default function OverallStatus({
     }))
 
   return (
-    <Container size="md" mt="xl" mb="xl">
-      <Card
-        padding="xl"
-        radius="lg"
-        shadow="sm"
-        withBorder
-        bg={statusColor === 'teal' ? 'rgba(5, 150, 105, 0.05)' : undefined}
-        style={{ maxWidth: groupedMonitor ? '897px' : '865px', margin: '0 auto' }}
-      >
-        <Center>
-          <ThemeIcon
-            size={80}
-            radius="100%"
-            color={statusColor}
-            variant="light"
-          >
-            {icon}
-          </ThemeIcon>
-        </Center>
-        <Title mt="md" style={{ textAlign: 'center' }} order={2}>
+    <Container size="md" mt={60} mb={60}>
+      <Stack align="center" gap="sm">
+        <ThemeIcon
+          size={48}
+          radius="100%"
+          color={statusColor === 'teal' ? '#10b981' : '#ef4444'}
+          variant="filled"
+        >
+          {icon}
+        </ThemeIcon>
+
+        <Title
+          style={{
+            textAlign: 'center',
+            fontSize: '36px',
+            fontWeight: 800,
+            color: '#ffffff',
+            letterSpacing: '-0.02em'
+          }}
+        >
           {statusString}
         </Title>
-        <Text c="dimmed" size="sm" mt="xs" style={{ textAlign: 'center' }}>
+
+        <Text c="#8a91a5" size="sm" mt={-5} style={{ textAlign: 'center', fontWeight: 500 }}>
           {t('Last updated on', {
-            date: new Date(state.lastUpdate * 1000).toLocaleString(),
+            date: new Date(state.lastUpdate * 1000).toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             seconds: currentTime - state.lastUpdate,
           })}
         </Text>
-      </Card>
+      </Stack>
+
+      {/* Upcoming & Active Maintenance left as is but with slightly better margins */}
+
 
       {/* Upcoming Maintenance */}
       {upcomingMaintenances.length > 0 && (

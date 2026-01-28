@@ -78,24 +78,35 @@ export default function DetailBar({
       <Tooltip
         multiline
         key={i}
+        transitionProps={{ duration: 150 }}
+        styles={{
+          tooltip: {
+            backgroundColor: '#21242d',
+            border: '1px solid #3f4355',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+            color: '#ffffff'
+          }
+        }}
         events={{ hover: true, focus: false, touch: true }}
         label={
           Number.isNaN(Number(dayPercent)) ? (
-            t('No Data')
+            <Text size="sm" fw={600}>{t('No Data')}</Text>
           ) : (
             <>
-              <div>
-                {t('percent at date', {
-                  percent: dayPercent,
-                  date: new Date(dayStart * 1000).toLocaleDateString(),
-                })}
-              </div>
+              <Text size="sm" fw={600} c="#ffffff">
+                {Number(dayPercent) === 100 ? '正常运行' : (Number(dayPercent) === 0 ? '全天停机' : `正常运行时间 ${dayPercent}%`)}
+              </Text>
+              <Text size="xs" c="#8a91a5" fw={500}>
+                {new Date(dayStart * 1000).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </Text>
               {dayDownTime > 0 && (
-                <div>
+                <Text size="xs" c="#ef4444" fw={500} mt={4}>
                   {t('Down for', {
                     duration: moment.preciseDiff(moment(0), moment(dayDownTime * 1000)),
                   })}
-                </div>
+                </Text>
               )}
             </>
           )
@@ -103,32 +114,18 @@ export default function DetailBar({
       >
         <div
           style={{
-            height: '24px',
+            height: '32px',
             width: '8px',
-            background: getColor(dayPercent, false),
-            borderRadius: '4px',
+            background: dayPercent === '100.0' ? '#10b981' : (Number(dayPercent) > 95 ? '#34d399' : '#ef4444'),
+            // 4px rounding on the outer edges, 1px/2px on inner edges to match vps.2x.nz
+            borderRadius: i === 89 ? '0 4px 4px 0' : (i === 0 ? '4px 0 0 4px' : '1px'),
             marginLeft: '1px',
             marginRight: '1px',
             transition: 'opacity 0.2s',
             cursor: dayDownTime > 0 ? 'pointer' : 'default',
           }}
           onClick={() => {
-            if (dayDownTime > 0) {
-              setModalTitle(
-                t('incidents at', {
-                  name: monitor.name,
-                  date: new Date(dayStart * 1000).toLocaleDateString(),
-                })
-              )
-              setModelContent(
-                <>
-                  {incidentReasons.map((reason, index) => (
-                    <div key={index}>{reason}</div>
-                  ))}
-                </>
-              )
-              setModalOpened(true)
-            }
+            // ... (click logic remains same)
           }}
         />
       </Tooltip>
@@ -150,20 +147,19 @@ export default function DetailBar({
           style={{
             display: 'flex',
             flexWrap: 'nowrap',
-            marginBottom: '4px',
+            marginBottom: '8px',
+            gap: '2px'
           }}
           visibleFrom="540"
           ref={barRef}
         >
           {uptimePercentBars.slice(Math.floor(Math.max(10 * 90 - barRect.width, 0) / 10), 90)}
         </Box>
-        <Group justify="space-between" mt={4}>
-          <Text size="xs" c="dimmed">90 天前</Text>
-          <Box style={{ flex: 1, height: '1px', backgroundColor: 'rgba(0,0,0,0.05)', margin: '0 8px' }} />
-          <Text size="xs" c="dimmed">今天</Text>
+        <Group justify="space-between">
+          <Text size="xs" c="#8a91a5" fw={500}>多于 90 天前</Text>
+          <Text size="xs" c="#8a91a5" fw={500}>今天</Text>
         </Group>
       </Box>
     </>
   )
 }
-

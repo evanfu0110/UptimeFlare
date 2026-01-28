@@ -1,33 +1,37 @@
 .header {
-  height: rem(56px);
-  margin-bottom: rem(100px);
-  background-color: var(--mantine-color-body);
-  border-bottom: rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  height: 64px;
+  background-color: #0d0f12;
+  border-bottom: none;
+  display: flex;
+  align-items: center;
 }
 
 .inner {
-  height: rem(56px);
+  height: 64px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .link {
   display: block;
   line-height: 1;
-  padding: rem(8px) rem(12px);
-  border-radius: var(--mantine-radius-sm);
+  padding: 8px 12px;
+  border-radius: 8px;
   text-decoration: none;
-  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
-  font-size: var(--mantine-font-size-sm);
+  color: #8a91a5;
+  font-size: 14px;
   font-weight: 500;
+  transition: all 0.2s ease;
 
-  @mixin hover {
-    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  &:hover {
+    background-color: #21242d;
+    color: #ffffff;
   }
 
-  [data-mantine-color-scheme] &[data-active] {
-    background-color: var(--mantine-color-blue-filled);
-    color: var(--mantine-color-white);
+  &[data-active="true"] {
+    background-color: #21242d;
+    color: #ffffff;
   }
 }

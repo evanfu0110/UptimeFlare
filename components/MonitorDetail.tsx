@@ -99,10 +99,11 @@ export default function MonitorDetail({
 
   const uptimePercent = (((totalTime - downTime) / totalTime) * 100).toPrecision(4)
 
-  // Conditionally render monitor name with or without hyperlink based on monitor.url presence
+  const statusText = hasMaintenance ? '维护中' : (state.incident[monitor.id].slice(-1)[0].end === undefined ? '已宕机' : '正常运行')
+  const statusColorHex = hasMaintenance ? '#f59e0b' : (state.incident[monitor.id].slice(-1)[0].end === undefined ? '#ef4444' : '#10b981')
+
   const monitorNameElement = (
     <Group gap="xs" style={{ display: 'inline-flex', alignItems: 'center' }}>
-      {statusIcon}
       {monitor.statusPageLink ? (
         <a
           href={monitor.statusPageLink}
@@ -120,16 +121,18 @@ export default function MonitorDetail({
           <span style={{ marginLeft: '4px' }}>{monitor.name}</span>
         </a>
       ) : (
-        <Text fw={600} size="sm" style={{ display: 'inline-flex', alignItems: 'center' }}>
+        <Group gap={4}>
           {renderIcon()}
-          <span style={{ marginLeft: '4px' }}>{monitor.name}</span>
-        </Text>
+          <Text fw={600} size="sm" c="#ffffff">
+            {monitor.name}
+          </Text>
+        </Group>
       )}
     </Group>
   )
 
   return (
-    <Box py="md">
+    <Box py="sm">
       <Group justify="space-between" mb="xs">
         {monitor.tooltip ? (
           <Tooltip label={monitor.tooltip}>{monitorNameElement}</Tooltip>
@@ -137,15 +140,26 @@ export default function MonitorDetail({
           monitorNameElement
         )}
 
-        <Badge
-          variant="light"
-          color={getColor(uptimePercent, true)}
-          radius="sm"
-          size="sm"
-          styles={{ label: { fontWeight: 700 } }}
-        >
-          {t('Overall', { percent: uptimePercent })}
-        </Badge>
+        <Group gap="md">
+          <Text size="xs" c="#8a91a5" fw={600}>
+            {uptimePercent}%
+          </Text>
+          <Badge
+            variant="filled"
+            bg="#2d313c"
+            style={{
+              color: '#ffffff',
+              textTransform: 'none',
+              fontSize: '13px',
+              fontWeight: 500,
+              padding: '4px 8px',
+              borderRadius: '4px',
+              height: 'auto'
+            }}
+          >
+            {statusText}
+          </Badge>
+        </Group>
       </Group>
 
       <DetailBar monitor={monitor} state={state} />

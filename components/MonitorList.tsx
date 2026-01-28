@@ -62,23 +62,29 @@ export default function MonitorList({
         value={expandedGroups}
         onChange={(values) => setExpandedGroups(values)}
         styles={{
-          item: { border: 'none', backgroundColor: 'transparent', marginBottom: '10px' },
-          control: {
-            backgroundColor: 'var(--mantine-color-default-hover)',
-            borderRadius: 'var(--mantine-radius-md)',
-            padding: '12px 16px'
+          item: {
+            border: '1px solid #21242d',
+            backgroundColor: '#111318',
+            marginBottom: '16px',
+            borderRadius: '12px',
+            overflow: 'hidden'
           },
-          panel: { paddingTop: '10px' }
+          control: {
+            padding: '16px 20px',
+          },
+          panel: { padding: '0 20px 10px 20px' },
+          content: { padding: 0 }
         }}
       >
         {Object.keys(group).map((groupName) => (
           <Accordion.Item key={groupName} value={groupName}>
             <Accordion.Control>
               <Group justify="space-between" style={{ width: '100%' }}>
-                <Text fw={700} size="md">{groupName}</Text>
+                <Text fw={700} size="md" c="#ffffff">{groupName}</Text>
                 <Badge
                   variant="light"
-                  color={getStatusTextColor(state, group[groupName])}
+                  bg={`${getStatusTextColor(state, group[groupName])}15`}
+                  style={{ color: getStatusTextColor(state, group[groupName]), textTransform: 'none' }}
                   size="sm"
                 >
                   {group[groupName].length - countDownCount(state, group[groupName])}/
@@ -87,16 +93,19 @@ export default function MonitorList({
               </Group>
             </Accordion.Control>
             <Accordion.Panel>
-              <Stack gap="xs">
+              <Stack gap={0}>
                 {monitors
                   .filter((monitor) => group[groupName].includes(monitor.id))
                   .sort((a, b) => group[groupName].indexOf(a.id) - group[groupName].indexOf(b.id))
-                  .map((monitor) => (
-                    <Card key={monitor.id} withBorder radius="md" padding="0" shadow="none">
-                      <Box px="md">
-                        <MonitorDetail monitor={monitor} state={state} />
-                      </Box>
-                    </Card>
+                  .map((monitor, idx, arr) => (
+                    <Box
+                      key={monitor.id}
+                      style={{
+                        borderBottom: idx === arr.length - 1 ? 'none' : '1px solid #21242d'
+                      }}
+                    >
+                      <MonitorDetail monitor={monitor} state={state} />
+                    </Box>
                   ))}
               </Stack>
             </Accordion.Panel>
