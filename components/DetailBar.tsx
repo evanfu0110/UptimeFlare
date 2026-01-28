@@ -1,6 +1,6 @@
 import { MonitorState, MonitorTarget } from '@/types/config'
 import { getColor } from '@/util/color'
-import { Box, Tooltip, Modal } from '@mantine/core'
+import { Box, Tooltip, Modal, Text, Group } from '@mantine/core'
 import { useResizeObserver } from '@mantine/hooks'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -103,12 +103,14 @@ export default function DetailBar({
       >
         <div
           style={{
-            height: '20px',
-            width: '7px',
+            height: '24px',
+            width: '8px',
             background: getColor(dayPercent, false),
-            borderRadius: '2px',
+            borderRadius: '4px',
             marginLeft: '1px',
             marginRight: '1px',
+            transition: 'opacity 0.2s',
+            cursor: dayDownTime > 0 ? 'pointer' : 'default',
           }}
           onClick={() => {
             if (dayDownTime > 0) {
@@ -143,18 +145,25 @@ export default function DetailBar({
       >
         {modelContent}
       </Modal>
-      <Box
-        style={{
-          display: 'flex',
-          flexWrap: 'nowrap',
-          marginTop: '10px',
-          marginBottom: '5px',
-        }}
-        visibleFrom="540"
-        ref={barRef}
-      >
-        {uptimePercentBars.slice(Math.floor(Math.max(9 * 90 - barRect.width, 0) / 9), 90)}
+      <Box mt="md" mb="md">
+        <Box
+          style={{
+            display: 'flex',
+            flexWrap: 'nowrap',
+            marginBottom: '4px',
+          }}
+          visibleFrom="540"
+          ref={barRef}
+        >
+          {uptimePercentBars.slice(Math.floor(Math.max(10 * 90 - barRect.width, 0) / 10), 90)}
+        </Box>
+        <Group justify="space-between" mt={4}>
+          <Text size="xs" c="dimmed">90 天前</Text>
+          <Box style={{ flex: 1, height: '1px', backgroundColor: 'rgba(0,0,0,0.05)', margin: '0 8px' }} />
+          <Text size="xs" c="dimmed">今天</Text>
+        </Group>
       </Box>
     </>
   )
 }
+

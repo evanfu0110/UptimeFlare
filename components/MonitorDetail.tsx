@@ -31,6 +31,7 @@ export default function MonitorDetail({
             flexShrink: 0,
             objectFit: 'contain',
             verticalAlign: 'middle',
+            borderRadius: '4px',
           }}
           alt=""
         />
@@ -100,43 +101,63 @@ export default function MonitorDetail({
 
   // Conditionally render monitor name with or without hyperlink based on monitor.url presence
   const monitorNameElement = (
-    <Text mt="sm" fw={700} style={{ display: 'inline-flex', alignItems: 'center' }}>
+    <Group gap="xs" style={{ display: 'inline-flex', alignItems: 'center' }}>
+      {statusIcon}
       {monitor.statusPageLink ? (
         <a
           href={monitor.statusPageLink}
           target="_blank"
-          style={{ display: 'inline-flex', alignItems: 'center', color: 'inherit' }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            textDecoration: 'none',
+            color: 'inherit',
+            fontWeight: 600,
+            fontSize: '15px'
+          }}
         >
-          {statusIcon}
           {renderIcon()}
-          {monitor.name}
+          <span style={{ marginLeft: '4px' }}>{monitor.name}</span>
         </a>
       ) : (
-        <>
-          {statusIcon}
+        <Text fw={600} size="sm" style={{ display: 'inline-flex', alignItems: 'center' }}>
           {renderIcon()}
-          {monitor.name}
-        </>
+          <span style={{ marginLeft: '4px' }}>{monitor.name}</span>
+        </Text>
       )}
-    </Text>
+    </Group>
   )
 
   return (
-    <>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+    <Box py="md">
+      <Group justify="space-between" mb="xs">
         {monitor.tooltip ? (
           <Tooltip label={monitor.tooltip}>{monitorNameElement}</Tooltip>
         ) : (
           monitorNameElement
         )}
 
-        <Text mt="sm" fw={700} style={{ display: 'inline', color: getColor(uptimePercent, true) }}>
+        <Badge
+          variant="light"
+          color={getColor(uptimePercent, true)}
+          radius="sm"
+          size="sm"
+          styles={{ label: { fontWeight: 700 } }}
+        >
           {t('Overall', { percent: uptimePercent })}
-        </Text>
-      </div>
+        </Badge>
+      </Group>
 
       <DetailBar monitor={monitor} state={state} />
-      {!monitor.hideLatencyChart && <DetailChart monitor={monitor} state={state} />}
-    </>
+
+      {!monitor.hideLatencyChart && (
+        <Box mt="xs">
+          <DetailChart monitor={monitor} state={state} />
+        </Box>
+      )}
+    </Box>
   )
 }
+
+import { Badge, Group, Box } from '@mantine/core'
+

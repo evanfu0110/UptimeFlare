@@ -58,46 +58,47 @@ export default function MonitorList({
       <Accordion
         multiple
         defaultValue={Object.keys(group)}
-        variant="contained"
+        variant="separated"
         value={expandedGroups}
         onChange={(values) => setExpandedGroups(values)}
+        styles={{
+          item: { border: 'none', backgroundColor: 'transparent', marginBottom: '10px' },
+          control: {
+            backgroundColor: 'var(--mantine-color-gray-0)',
+            borderRadius: 'var(--mantine-radius-md)',
+            padding: '12px 16px'
+          },
+          panel: { paddingTop: '10px' }
+        }}
       >
         {Object.keys(group).map((groupName) => (
           <Accordion.Item key={groupName} value={groupName}>
             <Accordion.Control>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  alignItems: 'center',
-                }}
-              >
-                <div>{groupName}</div>
-                <Text
-                  fw={500}
-                  style={{
-                    display: 'inline',
-                    paddingRight: '5px',
-                    color: getStatusTextColor(state, group[groupName]),
-                  }}
+              <Group justify="space-between" style={{ width: '100%' }}>
+                <Text fw={700} size="md">{groupName}</Text>
+                <Badge
+                  variant="light"
+                  color={getStatusTextColor(state, group[groupName])}
+                  size="sm"
                 >
                   {group[groupName].length - countDownCount(state, group[groupName])}/
                   {group[groupName].length} {t('Operational')}
-                </Text>
-              </div>
+                </Badge>
+              </Group>
             </Accordion.Control>
             <Accordion.Panel>
-              {monitors
-                .filter((monitor) => group[groupName].includes(monitor.id))
-                .sort((a, b) => group[groupName].indexOf(a.id) - group[groupName].indexOf(b.id))
-                .map((monitor) => (
-                  <div key={monitor.id}>
-                    <Card.Section ml="xs" mr="xs">
-                      <MonitorDetail monitor={monitor} state={state} />
-                    </Card.Section>
-                  </div>
-                ))}
+              <Stack gap="xs">
+                {monitors
+                  .filter((monitor) => group[groupName].includes(monitor.id))
+                  .sort((a, b) => group[groupName].indexOf(a.id) - group[groupName].indexOf(b.id))
+                  .map((monitor) => (
+                    <Card key={monitor.id} withBorder radius="md" padding="0" shadow="none">
+                      <Box px="md">
+                        <MonitorDetail monitor={monitor} state={state} />
+                      </Box>
+                    </Card>
+                  ))}
+              </Stack>
             </Accordion.Panel>
           </Accordion.Item>
         ))}
@@ -105,29 +106,34 @@ export default function MonitorList({
     )
   } else {
     // Ungrouped monitors
-    content = monitors.map((monitor) => (
-      <div key={monitor.id}>
-        <Card.Section ml="xs" mr="xs">
-          <MonitorDetail monitor={monitor} state={state} />
-        </Card.Section>
-      </div>
-    ))
+    content = (
+      <Stack gap="md">
+        {monitors.map((monitor) => (
+          <Card key={monitor.id} withBorder radius="md" padding="0" shadow="none">
+            <Box px="md">
+              <MonitorDetail monitor={monitor} state={state} />
+            </Box>
+          </Card>
+        ))}
+      </Stack>
+    )
   }
 
   return (
     <Center>
-      <Card
-        shadow="sm"
-        padding="lg"
-        radius="lg"
+      <Box
         ml="md"
         mr="md"
         mt="xl"
-        withBorder={!groupedMonitor}
-        style={{ width: groupedMonitor ? '897px' : '865px' }}
+        style={{
+          width: groupedMonitor ? '897px' : '865px',
+        }}
       >
         {content}
-      </Card>
+      </Box>
     </Center>
   )
 }
+
+import { Box, Stack, Group, Badge } from '@mantine/core'
+
