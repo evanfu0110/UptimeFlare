@@ -64,7 +64,7 @@ export default function MonitorList({
         styles={{
           item: { border: 'none', backgroundColor: 'transparent', marginBottom: '10px' },
           control: {
-            backgroundColor: 'var(--mantine-color-gray-0)',
+            backgroundColor: 'var(--mantine-color-default-hover)',
             borderRadius: 'var(--mantine-radius-md)',
             padding: '12px 16px'
           },

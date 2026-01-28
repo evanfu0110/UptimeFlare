@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google'
 import { MaintenanceConfig, MonitorState, MonitorTarget } from '@/types/config'
 import { pageConfig, workerConfig } from '@/uptime.config'
 import Header from '@/components/Header'
-import { Box, Button, Center, Container, Group, Select, Text, Stack } from '@mantine/core'
+import { Box, Button, Center, Container, Group, Select, Text, Stack, Title, Badge } from '@mantine/core'
 import Footer from '@/components/Footer'
 import { useEffect, useState } from 'react'
 import MaintenanceAlert from '@/components/MaintenanceAlert'
@@ -22,19 +22,42 @@ interface IncidentPageProps {
   monitors: MonitorTarget[]
 }
 
+interface IncidentEvent {
+  id: string
+  time: number
+  type: 'downtime' | 'restored'
+  monitorName: string
+  message: string
+  incidentId: string
+}
+
+function translateError(msg: string): string {
+  if (!msg) return ''
+  if (msg.includes('timed out')) return '请求超时 (Timed out)'
+  if (msg.includes('fetch failed')) return '抓取失败 (Fetch failed)'
+  if (msg.includes('connection reset')) return '连接重置 (Connection reset)'
+  if (msg.includes('ECONNREFUSED')) return '拒绝连接 (Connection refused)'
+  if (msg.includes('404')) return '页面未找到 (404 Not Found)'
+  if (msg.includes('500')) return '服务器内部错误 (500 Internal Error)'
+  if (msg.includes('502')) return '网关错误 (502 Bad Gateway)'
+  if (msg.includes('503')) return '服务不可用 (503 Service Unavailable)'
+  return msg
+}
+
 function filterEventsByMonth(
   state: MonitorState,
   monitors: MonitorTarget[],
   monthStr: string
-) {
-  const events: any[] = []
-  const [year, month] = monthStr.split('-').map(Number)
+): IncidentEvent[] {
+  const events: IncidentEvent[] = []
 
   monitors.forEach((monitor) => {
     const monitorIncidents = state.incident[monitor.id]
     if (!monitorIncidents) return
 
     monitorIncidents.forEach((incident) => {
+      const incidentId = `${monitor.id}-${incident.start[0]}`
+
       // Handle each error slice in an incident
       incident.error.forEach((errorMsg, idx) => {
         const startTime = incident.start[idx]
@@ -43,10 +66,12 @@ function filterEventsByMonth(
 
         if (incidentMonth === monthStr) {
           events.push({
+            id: `${monitor.id}-${startTime}-down`,
             type: 'downtime',
             time: startTime,
             monitorName: monitor.name,
-            message: errorMsg,
+            message: translateError(errorMsg),
+            incidentId: incidentId,
           })
         }
       })
@@ -56,9 +81,12 @@ function filterEventsByMonth(
         const incidentMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
         if (incidentMonth === monthStr) {
           events.push({
+            id: `${monitor.id}-${incident.end}-up`,
             type: 'restored',
             time: incident.end,
             monitorName: monitor.name,
+            message: '服务已恢复正常',
+            incidentId: incidentId,
           })
         }
       }
@@ -123,22 +151,22 @@ export default function IncidentsPage({ compactedStateStr, monitors }: IncidentP
 
       <main className={inter.className}>
         <Header />
-        <Center mt="xl">
+        <Center mt="xl" pb="xl">
           <Container size="md" style={{ width: '100%' }}>
             <Title size="h2" mb="xl" ta="center" fw={700}>
-              发现故障历史
+              全量故障历史
             </Title>
 
             <Group justify="space-between" mb="md">
-              <Group>
-                <Button variant="default" size="xs" onClick={() => {
+              <Group gap="xs">
+                <Button variant="default" size="xs" radius="md" onClick={() => {
                   window.location.hash = prev
                   setSelectedMonth(prev)
                 }}>
                   {t('Backwards')}
                 </Button>
-                <Text fw={700}>{selectedMonth}</Text>
-                <Button variant="default" size="xs" onClick={() => {
+                <Badge variant="light" size="lg" radius="md" color="teal">{selectedMonth}</Badge>
+                <Button variant="default" size="xs" radius="md" onClick={() => {
                   window.location.hash = next
                   setSelectedMonth(next)
                 }}>
@@ -151,44 +179,80 @@ export default function IncidentsPage({ compactedStateStr, monitors }: IncidentP
                 value={selectedMonitor}
                 onChange={setSelectedMonitor}
                 clearable
+                radius="md"
                 style={{ width: 220 }}
               />
             </Group>
 
-            <Stack gap="md">
+            <Stack gap="xs">
               {monitorFilteredEvents.length === 0 ? (
                 <Card padding="xl" radius="lg" shadow="sm" withBorder style={{ textAlign: 'center' }}>
                   <Text c="dimmed">{t('No data available')}</Text>
                 </Card>
               ) : (
-                monitorFilteredEvents.map((event, i) => (
-                  <Card key={i} padding="md" radius="md" withBorder shadow="xs">
-                    <Group justify="space-between">
-                      <Group gap="sm">
-                        <ThemeIcon
-                          color={event.type === 'downtime' ? 'red' : 'teal'}
-                          variant="light"
-                          radius="xl"
-                        >
-                          {event.type === 'downtime' ? <IconAlertCircle size={16} /> : <IconCircleCheck size={16} />}
-                        </ThemeIcon>
-                        <div>
-                          <Text fw={600} size="sm">
-                            {event.monitorName} {event.type === 'downtime' ? '检测到故障' : '服务已恢复正常'}
-                          </Text>
-                          {event.message && (
-                            <Text size="xs" c="dimmed">
-                              {event.message}
+                monitorFilteredEvents.map((event, idx) => {
+                  const hasUp = event.type === 'downtime' && monitorFilteredEvents.some(e => e.type === 'restored' && e.incidentId === event.incidentId);
+                  const isLinkedToNext = idx > 0 && monitorFilteredEvents[idx - 1].incidentId === event.incidentId;
+
+                  return (
+                    <Card
+                      key={event.id}
+                      padding="md"
+                      radius="md"
+                      withBorder
+                      shadow="xs"
+                      style={{
+                        zIndex: 100 - idx,
+                        transform: `scale(${1 - (idx * 0.002)})`,
+                      }}
+                    >
+                      <Group justify="space-between">
+                        <Group gap="sm">
+                          <div style={{ position: 'relative' }}>
+                            <ThemeIcon
+                              color={event.type === 'downtime' ? 'red' : 'teal'}
+                              variant="light"
+                              radius="xl"
+                              style={{ position: 'relative', zIndex: 2 }}
+                            >
+                              {event.type === 'downtime' ? <IconAlertCircle size={16} /> : <IconCircleCheck size={16} />}
+                            </ThemeIcon>
+                            {((event.type === 'downtime' && hasUp) || (event.type === 'restored' && isLinkedToNext)) && (
+                              <div style={{
+                                position: 'absolute',
+                                top: event.type === 'downtime' ? '100%' : '-100%',
+                                left: '50%',
+                                width: '2px',
+                                height: '40px',
+                                backgroundColor: event.type === 'downtime' ? 'var(--mantine-color-red-2)' : 'var(--mantine-color-teal-2)',
+                                transform: 'translateX(-50%)',
+                                zIndex: 1
+                              }} />
+                            )}
+                          </div>
+                          <div>
+                            <Text fw={600} size="sm">
+                              {event.monitorName} {event.type === 'downtime' ? '检测到故障' : '服务已恢复正常'}
                             </Text>
-                          )}
-                        </div>
+                            {event.message && (
+                              <Text size="xs" c="dimmed">
+                                {event.message}
+                              </Text>
+                            )}
+                          </div>
+                        </Group>
+                        <Text size="xs" c="dimmed" fw={500}>
+                          {new Date(event.time * 1000).toLocaleString('zh-CN', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </Text>
                       </Group>
-                      <Text size="xs" c="dimmed">
-                        {new Date(event.time * 1000).toLocaleString('zh-CN')}
-                      </Text>
-                    </Group>
-                  </Card>
-                ))
+                    </Card>
+                  )
+                })
               )}
             </Stack>
           </Container>
@@ -207,6 +271,4 @@ export async function getServerSideProps() {
   }))
   return { props: { compactedStateStr, monitors } }
 }
-
-import { Title } from '@mantine/core'
 
