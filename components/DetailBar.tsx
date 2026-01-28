@@ -197,7 +197,6 @@ function UptimeBar({
           height: '34px',
           flex: 1,
           background: isNoData
-          background: isNoData
             ? 'rgba(255, 255, 255, 0.05)'
             : (dayDownTime === 0
               ? (hasGlitches ? '#a7f3d0' : '#10b981')
